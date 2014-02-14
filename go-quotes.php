@@ -9,4 +9,4 @@
  */
 
 require_once __DIR__ . '/components/class-go-quotes.php';
-$go_pullquote = new Go_Quotes();
+$go_quotes = new Go_Quotes();
