@@ -18,10 +18,30 @@ class Go_Quotes
 
 		add_action( 'init', array( $this, 'add_buttons' ) );
 
+		add_action( 'admin_enqueue_scripts', array( $this, 'action_enqueue_scripts' ) );
+		add_action( 'admin_print_scripts', array( $this, 'action_print_scripts' ), 1 );
+
 		add_shortcode( 'pullquote', array( $this, 'pullquote_shortcode' ) );
 		add_shortcode( 'quote', array( $this, 'quote_shortcode' ) );
 		add_shortcode( 'blockquote', array( $this, 'blockquote_shortcode' ) );
 	} // end __construct
+
+		public function action_print_scripts()
+		{
+			?>
+		<script type="text/javascript">
+		(function(){
+			var quote_types = <?php echo json_encode( $this->quote_types ); ?>;
+			window.quote_types = quote_types;
+		})();
+		</script><?php
+		}
+
+	// add quicktags buttons
+	public function action_enqueue_scripts()
+	{
+		wp_enqueue_script( 'go-quotes-qt', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags') );
+	}
 
 	/**
 	 * Pullquote shortcode handler.
@@ -179,11 +199,11 @@ class Go_Quotes
 			return;
 		}//end if
 
-		add_filter( 'mce_external_plugins', array( $this, 'tinymce_plugin' ) );
+		add_filter( 'mce_external_plugins', array( $this, 'tinymce_plugins' ) );
 		add_filter( 'mce_buttons', array( $this, 'tinymce_buttons' ) );
 	}//end add_buttons
 
-	public function tinymce_plugin( $plugins )
+	public function tinymce_plugins( $plugins )
 	{
 		$plugins['go-quotes'] = plugins_url( 'js/go-quotes-mce.js', __FILE__ );
 		return $plugins;
@@ -191,6 +211,10 @@ class Go_Quotes
 
 	public function tinymce_buttons( $buttons )
 	{
+
+		//remove the default blockquote button - we're going to replace it
+		unset($buttons['block']);
+
 		array_push( $buttons, 'separator' );
 
 		foreach( $this->quote_types as $quote_type )
