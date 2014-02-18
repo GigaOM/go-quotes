@@ -4,12 +4,20 @@ class Go_Quotes
 {
 	private $_component     = '';
 	private $content = '';
+	private $quote_types = array(
+		'blockquote',
+		'pullquote',
+		'quote',
+		);
 
 	/**
 	 * Initialize the plugin and register hooks.
 	 */
 	public function __construct()
 	{
+
+		add_action( 'init', array( $this, 'add_buttons' ) );
+
 		add_shortcode( 'pullquote', array( $this, 'pullquote_shortcode' ) );
 		add_shortcode( 'quote', array( $this, 'quote_shortcode' ) );
 		add_shortcode( 'blockquote', array( $this, 'blockquote_shortcode' ) );
@@ -39,7 +47,7 @@ class Go_Quotes
 			$atts );
 
 		$person = ! $attributes['person'] ? FALSE : str_replace( ' ', '-', $attributes['person'] );
-		$attribution = ! $attributes['person'] ? FALSE : esc_html( $attributes['attribution'] );
+		$attribution = ! $attributes['attribution'] ? FALSE : esc_html( $attributes['attribution'] );
 
 		ob_start();
 		?>
@@ -58,7 +66,7 @@ class Go_Quotes
 						<?php if ( $person )
 						{ //if we have a person term, wrap it in a cite link
 							?>
-							<a href="search.gigaom.com/person/<?php esc_html( $person ); ?>/">
+							<a href="http://search.gigaom.com/person/<?php echo esc_html( $person ); ?>/">
 							<?php
 						}//end if
 						echo $attribution; ?>
@@ -71,10 +79,10 @@ class Go_Quotes
 						?>
 					</cite>
 				</footer>
-				<?php
-			}//end if
-			?>
-		</aside>
+				<?php 
+				}//end if
+				?>
+			</aside>
 		<?php
 		return ob_get_clean();
 	} // end pullquote_shortcode
@@ -110,14 +118,16 @@ class Go_Quotes
 		<blockquote>
 			<p class='content'>
 				<?php
-				echo esc_html( $content ); 
-
+				echo esc_html( $content );
+				?>
+				</p>
+				<?php
 				if ( $attributes['attribution'] )
 				{
 					?>
 					<footer>
 						<cite>
-							<a href="search.gigaom.com/person/<?php esc_html( $person ); ?>/">
+							<a href="http://search.gigaom.com/person/<?php echo esc_html( $person ); ?>/">
 								<?php echo esc_html( $attributes['attribution'] ); ?>
 							</a>
 						</cite>
@@ -125,8 +135,7 @@ class Go_Quotes
 					<?php
 				}//end if
 				?>
-			</p>
-		</blockquote>
+			</blockquote>
 		<?php
 		return ob_get_clean();
 	} // end blockquote_shortcode
@@ -160,5 +169,39 @@ class Go_Quotes
 		<?php
 		return ob_get_clean();
 	} // end quote_shortcode
+
+	// TinyMCE shizzle
+	
+	public function add_buttons()
+	{
+		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'edit_pages' ) && 'true' != get_user_option('rich_editing') )
+		{
+			return;
+		}//end if
+
+		add_filter( 'mce_external_plugins', array( $this, 'tinymce_plugin' ) );
+		add_filter( 'mce_buttons', array( $this, 'tinymce_buttons' ) );
+	}//end add_buttons
+
+	public function tinymce_plugin( $plugins )
+	{
+		$plugins['go-quotes'] = plugins_url( 'js/go-quotes-mce.js', __FILE__ );
+		return $plugins;
+	}//end tinymce_plugin
+
+	public function tinymce_buttons( $buttons )
+	{
+		array_push( $buttons, 'separator' );
+
+		foreach( $this->quote_types as $quote_type )
+		{
+			array_push( $buttons, $quote_type );
+		}//end foreach
+
+		return $buttons;
+	}//end tinymce_buttons
+
+	// init process for button control
+	
 
 }// end class
