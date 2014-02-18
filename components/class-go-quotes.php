@@ -15,7 +15,6 @@ class Go_Quotes
 	 */
 	public function __construct()
 	{
-
 		add_action( 'init', array( $this, 'add_buttons' ) );
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'action_enqueue_scripts' ) );
@@ -222,7 +221,6 @@ class Go_Quotes
 	 */
 	public function tinymce_buttons( $buttons )
 	{
-
 		//remove the default blockquote button - we're going to replace it
 		unset($buttons['b-quote']);
 
