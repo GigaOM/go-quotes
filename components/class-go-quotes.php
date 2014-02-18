@@ -26,18 +26,21 @@ class Go_Quotes
 		add_shortcode( 'blockquote', array( $this, 'blockquote_shortcode' ) );
 	} // end __construct
 
-		public function action_print_scripts()
-		{
-			?>
+	/** 
+	* Make quotes array available to javascript functions
+	*/
+	public function action_print_scripts()
+	{
+		?>
 		<script type="text/javascript">
-		(function(){
-			var quote_types = <?php echo json_encode( $this->quote_types ); ?>;
-			window.quote_types = quote_types;
-		})();
-		</script><?php
-		}
+			window.go_quote_types = <?php echo json_encode( $this->quote_types ); ?>;
+		</script>
+		<?php
+	}
 
-	// add quicktags buttons
+	/** 
+	* Load js to add quicktags buttons
+	*/
 	public function action_enqueue_scripts()
 	{
 		wp_enqueue_script( 'go-quotes-qt', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags') );
@@ -66,8 +69,8 @@ class Go_Quotes
 				),
 			$atts );
 
-		$person = ! $attributes['person'] ? FALSE : str_replace( ' ', '-', $attributes['person'] );
-		$attribution = ! $attributes['attribution'] ? FALSE : esc_html( $attributes['attribution'] );
+		$person = $attributes['person'] ? str_replace( ' ', '-', $attributes['person'] ) : FALSE;
+		$attribution = $attributes['attribution'] ? $attributes['attribution'] : FALSE;
 
 		ob_start();
 		?>
@@ -86,10 +89,10 @@ class Go_Quotes
 						<?php if ( $person )
 						{ //if we have a person term, wrap it in a cite link
 							?>
-							<a href="http://search.gigaom.com/person/<?php echo esc_html( $person ); ?>/">
+							<a href="<?php echo esc_url('http://search.gigaom.com/person/' . $person .'/' ); ?>">
 							<?php
 						}//end if
-						echo $attribution; ?>
+						echo esc_html( $attribution ); ?>
 						<?php if ( $person )
 						{ 
 							?>
@@ -100,8 +103,8 @@ class Go_Quotes
 					</cite>
 				</footer>
 				<?php 
-				}//end if
-				?>
+			}//end if
+			?>
 			</aside>
 		<?php
 		return ob_get_clean();
@@ -130,8 +133,8 @@ class Go_Quotes
 				),
 			$atts );
 
-		$person = ! $attributes['person'] ? FALSE : str_replace( ' ', '-', $attributes['person'] );
-		$attribution = ! $attributes['person'] ? FALSE : esc_html( $attributes['attribution'] );
+		$person = $attributes['person'] ? str_replace( ' ', '-', $attributes['person'] ) : FALSE;
+		$attribution = $attributes['person'] ? $attributes['attribution'] : FALSE;
 
 		ob_start();
 		?>
@@ -140,22 +143,22 @@ class Go_Quotes
 				<?php
 				echo esc_html( $content );
 				?>
-				</p>
-				<?php
-				if ( $attributes['attribution'] )
-				{
-					?>
-					<footer>
-						<cite>
-							<a href="http://search.gigaom.com/person/<?php echo esc_html( $person ); ?>/">
-								<?php echo esc_html( $attributes['attribution'] ); ?>
-							</a>
-						</cite>
-					</footer>
-					<?php
-				}//end if
+			</p>
+			<?php
+			if ( $attribution )
+			{
 				?>
-			</blockquote>
+				<footer>
+					<cite>
+						<a href="<?php echo esc_url('http://search.gigaom.com/person/' . $person . '/' ); ?>">
+							<?php echo esc_html( $attribution ); ?>
+						</a>
+					</cite>
+				</footer>
+				<?php
+			}//end if
+			?>
+		</blockquote>
 		<?php
 		return ob_get_clean();
 	} // end blockquote_shortcode
@@ -181,17 +184,19 @@ class Go_Quotes
 				),
 			$atts );
 
-		$cite = ( ! $attributes['person'] ) ? '' : "cite='http://search.gigaom.com/person/" . str_replace( ' ', '-', $attributes['person'] ) . "'";
+		$cite = $attributes['person'] ? "cite='http://search.gigaom.com/person/" . str_replace( ' ', '-', $attributes['person'] ) . "'": '';
 
-		ob_start();
-		?>
-		<q <?php echo $cite; ?>><?php echo esc_html( $content ); ?></q>
-		<?php
-		return ob_get_clean();
+		$quote_string = "<q " . esc_html( $cite ) . ">" . esc_html( $content ) . "</q>";
+		
+		return $quote_string;
 	} // end quote_shortcode
 
 	// TinyMCE shizzle
 	
+	/**
+	 * Check for the rich text editor and user permissions
+	 * before adding the filters for our custom buttons
+	 */
 	public function add_buttons()
 	{
 		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'edit_pages' ) && 'true' != get_user_option('rich_editing') )
@@ -203,17 +208,23 @@ class Go_Quotes
 		add_filter( 'mce_buttons', array( $this, 'tinymce_buttons' ) );
 	}//end add_buttons
 
+	/**
+	* Load the tinymce pluygin script
+	*/
 	public function tinymce_plugins( $plugins )
 	{
 		$plugins['go-quotes'] = plugins_url( 'js/go-quotes-mce.js', __FILE__ );
 		return $plugins;
 	}//end tinymce_plugin
 
+	/**
+	 * Add our custom buttons to the tinymce button array
+	 */
 	public function tinymce_buttons( $buttons )
 	{
 
 		//remove the default blockquote button - we're going to replace it
-		unset($buttons['block']);
+		unset($buttons['b-quote']);
 
 		array_push( $buttons, 'separator' );
 
@@ -224,8 +235,5 @@ class Go_Quotes
 
 		return $buttons;
 	}//end tinymce_buttons
-
-	// init process for button control
-	
 
 }// end class

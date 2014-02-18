@@ -1,7 +1,7 @@
 ( function($){
 	tinymce.create('tinymce.plugins.go_quotes', {
 		init: function(ed, url) {
-			$.each( quote_type, function( quote_type ) {
+			$.each( go_quote_types, function( quote_type ) {
 				console_log(quote_type);
 				var mceCommand = 'mce' + quote_type,
 					shortcode_open = '[' + quote_type
