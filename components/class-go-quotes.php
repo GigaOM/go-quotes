@@ -15,10 +15,10 @@ class Go_Quotes
 	 */
 	public function __construct()
 	{
-		add_action( 'init', array( $this, 'add_buttons' ) );
+		add_action( 'admin_init', array( $this, 'add_buttons' ) );
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'action_enqueue_scripts' ) );
-		add_action( 'admin_print_scripts', array( $this, 'action_print_scripts' ), 1 );
+		//add_action( 'admin_print_scripts', array( $this, 'action_print_scripts' ), 1 );
 
 		add_shortcode( 'pullquote', array( $this, 'pullquote_shortcode' ) );
 		add_shortcode( 'quote', array( $this, 'quote_shortcode' ) );
@@ -27,7 +27,7 @@ class Go_Quotes
 
 	/** 
 	* Make quotes array available to javascript functions
-	*/
+	
 	public function action_print_scripts()
 	{
 		?>
@@ -36,6 +36,7 @@ class Go_Quotes
 		</script>
 		<?php
 	}
+	*/
 
 	/** 
 	* Load js to add quicktags buttons
@@ -43,6 +44,13 @@ class Go_Quotes
 	public function action_enqueue_scripts()
 	{
 		wp_enqueue_script( 'go-quotes-qt', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags') );
+		wp_localize_script(
+			'go-quotes-qt',
+			'go_quote_types',
+			array(
+				'types' => $this->quote_types
+			)
+		);
 	}
 
 	/**

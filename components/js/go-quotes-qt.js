@@ -1,5 +1,6 @@
 (function(){
-	jQuery.each( go_quote_types, function( key, quote_type ) {
+	console.log( go_quote_types);
+	jQuery.each( go_quote_types.types, function( key, quote_type ) {
 		var shortcode_open = '[' + quote_type,		
 			shortcode_close = '[/' + quote_type + ']';
 			if ( quote_type != 'quote' ) {
