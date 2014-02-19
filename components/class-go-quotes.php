@@ -2,13 +2,12 @@
 
 class Go_Quotes
 {
-	private $_component     = '';
-	private $content = '';
-	private $quote_types = array(
-		'blockquote',
-		'pullquote',
-		'quote',
-		);
+	public $slug     = 'go-contact';
+	public $content = '';
+	//counter variables
+	public $blockquote_id = 0;
+	public $inlinequote_id = 0;
+	public $pullquote_id = 0;
 
 	/**
 	 * Initialize the plugin and register hooks.
@@ -18,25 +17,44 @@ class Go_Quotes
 		add_action( 'admin_init', array( $this, 'add_buttons' ) );
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'action_enqueue_scripts' ) );
-		//add_action( 'admin_print_scripts', array( $this, 'action_print_scripts' ), 1 );
 
+		add_action( 'init', array( $this, 'init' ) );
+	} // end __construct
+
+	/**
+	 * Functions and actions to run on init
+	 */
+	public function init()
+	{
 		add_shortcode( 'pullquote', array( $this, 'pullquote_shortcode' ) );
 		add_shortcode( 'quote', array( $this, 'quote_shortcode' ) );
 		add_shortcode( 'blockquote', array( $this, 'blockquote_shortcode' ) );
-	} // end __construct
-
-	/** 
-	* Make quotes array available to javascript functions
-	
-	public function action_print_scripts()
-	{
-		?>
-		<script type="text/javascript">
-			window.go_quote_types = <?php echo json_encode( $this->quote_types ); ?>;
-		</script>
-		<?php
 	}
-	*/
+
+	/**
+	 *	Singleton for config data
+	 */
+	public function config()
+	{
+		if ( ! $this->config )
+		{
+			$this->config = (object) apply_filters(
+				'go_config',
+				array(
+					'quote_types' => array(
+						'blockquote',
+						'pullquote',
+						'quote',
+					),
+					'taxonomy'    => 'person',
+					'default_url' => 'http://search.local.gostage.it/?s=',
+				),
+				$this->slug
+			);
+		} // END if
+
+		return $this->config;
+	} // END config
 
 	/** 
 	* Load js to add quicktags buttons
@@ -48,7 +66,7 @@ class Go_Quotes
 			'go-quotes-qt',
 			'go_quote_types',
 			array(
-				'types' => $this->quote_types
+				'types' => $this->config()->quote_types
 			)
 		);
 	}
@@ -81,7 +99,7 @@ class Go_Quotes
 
 		ob_start();
 		?>
-		<aside class="pullquote right">
+		<aside class="pullquote right" id="pullquote-<?php echo ++$this->pullquote_id; ?>">
 			<p class='content'>
 				<?php
 				echo esc_html( $content ); 
@@ -93,14 +111,17 @@ class Go_Quotes
 				?>
 				<footer>
 					<cite>
-						<?php if ( $person )
+						<?php
+						if ( $person )
 						{ //if we have a person term, wrap it in a cite link
+							$term_link = is_wp_error( get_term_link( $person, $this->config()->taxonomy ) ) ? $this->config()->default_url . str_replace( ' ', '+', $attributes['person'] ) : get_term_link( $person, $this->config()->taxonomy );
 							?>
-							<a href="<?php echo esc_url('http://search.gigaom.com/person/' . $person .'/' ); ?>">
+							<a href="<?php echo $term_link ?>">
 							<?php
 						}//end if
 						echo esc_html( $attribution ); ?>
-						<?php if ( $person )
+						<?php
+						if ( $person )
 						{ 
 							?>
 							</a>
@@ -141,11 +162,11 @@ class Go_Quotes
 			$atts );
 
 		$person = $attributes['person'] ? str_replace( ' ', '-', $attributes['person'] ) : FALSE;
-		$attribution = $attributes['person'] ? $attributes['attribution'] : FALSE;
+		$attribution = $attributes['attribution'] ? $attributes['attribution'] : FALSE;
 
 		ob_start();
 		?>
-		<blockquote>
+		<blockquote  id="blockquote-<?php echo ++$this->blockquote_id; ?>">
 			<p class='content'>
 				<?php
 				echo esc_html( $content );
@@ -157,9 +178,23 @@ class Go_Quotes
 				?>
 				<footer>
 					<cite>
-						<a href="<?php echo esc_url('http://search.gigaom.com/person/' . $person . '/' ); ?>">
-							<?php echo esc_html( $attribution ); ?>
-						</a>
+						<?php
+						if ( $person )
+						{ //if we have a person term, wrap it in a cite link
+							$term_link = is_wp_error( get_term_link( $person, $this->config()->taxonomy ) ) ? $this->config()->default_url . str_replace( ' ', '+', $attributes['person'] ) : get_term_link( $person, $this->config()->taxonomy );
+							?>
+							<a href="<?php echo $term_link ?>">
+							<?php
+						}//end if
+						echo esc_html( $attribution ); ?>
+						<?php
+						if ( $person )
+						{ 
+							?>
+							</a>
+							<?php
+						}//end if
+						?>
 					</cite>
 				</footer>
 				<?php
@@ -179,6 +214,7 @@ class Go_Quotes
 	 */
 	public function quote_shortcode( $atts, $content = null )
 	{
+		error_log('inline');
 		//bail if no content
 		if ( is_null( $content ) )
 		{
@@ -191,9 +227,11 @@ class Go_Quotes
 				),
 			$atts );
 
-		$cite = $attributes['person'] ? "cite='http://search.gigaom.com/person/" . str_replace( ' ', '-', $attributes['person'] ) . "'": '';
+		$term_link = is_wp_error( get_term_link( $attributes['person'], $this->config()->taxonomy ) ) ? $this->config()->default_url . str_replace( ' ', '+', $attributes['person'] ) : get_term_link( $attributes['person'], $this->config()->taxonomy );
 
-		$quote_string = "<q " . esc_html( $cite ) . ">" . esc_html( $content ) . "</q>";
+		$cite = $attributes['person'] ? "cite='" . $term_link . "'": '';
+
+		$quote_string = "<q " . esc_html( $cite ) . "  id='quote-" . ++$this->inlinequote_id . "'>" . esc_html( $content ) . "</q>";
 		
 		return $quote_string;
 	} // end quote_shortcode
@@ -234,7 +272,7 @@ class Go_Quotes
 
 		array_push( $buttons, 'separator' );
 
-		foreach( $this->quote_types as $quote_type )
+		foreach( $this->config()->quote_types as $quote_type )
 		{
 			array_push( $buttons, $quote_type );
 		}//end foreach
