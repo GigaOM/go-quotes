@@ -36,7 +36,7 @@ class Go_Quotes
 	 */
 	public function config()
 	{
-		if ( ! $this->config )
+		if ( ! isset( $this->config ) || ! $this->config )
 		{
 			$this->config = (object) apply_filters(
 				'go_config',
