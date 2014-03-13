@@ -16,7 +16,7 @@ class Go_Quotes
 	{
 		add_action( 'admin_init', array( $this, 'add_buttons' ) );
 
-		add_action( 'edit_form_top', array( $this, 'action_enqueue_scripts' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'action_enqueue_scripts' ) );
 
 		add_action( 'init', array( $this, 'init' ) );
 	} // end __construct
@@ -60,7 +60,7 @@ class Go_Quotes
 	*/
 	public function action_enqueue_scripts()
 	{
-		wp_enqueue_script( 'go-quotes-qt', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags') );
+		wp_enqueue_script( 'edit_form_top', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags') );
 
 		wp_localize_script(
 			'go-quotes-qt',
