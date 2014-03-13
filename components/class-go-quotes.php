@@ -16,7 +16,7 @@ class Go_Quotes
 	{
 		add_action( 'admin_init', array( $this, 'add_buttons' ) );
 
-		add_action( 'admin_enqueue_scripts', array( $this, 'action_enqueue_scripts' ) );
+		add_action( 'edit_form_top', array( $this, 'action_enqueue_scripts' ) );
 
 		add_action( 'init', array( $this, 'init' ) );
 	} // end __construct
@@ -47,7 +47,6 @@ class Go_Quotes
 						'quote',
 					),
 					'taxonomy'    => 'person',
-					'default_url' => 'http://search.local.gostage.it/?s=',
 				),
 				$this->slug
 			);
@@ -62,6 +61,7 @@ class Go_Quotes
 	public function action_enqueue_scripts()
 	{
 		wp_enqueue_script( 'go-quotes-qt', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags') );
+
 		wp_localize_script(
 			'go-quotes-qt',
 			'go_quote_types',
@@ -69,17 +69,9 @@ class Go_Quotes
 				'types' => $this->config()->quote_types
 			)
 		);
-	}
+	}//end action_enqueue_scripts
 
-	/**
-	 * Pullquote shortcode handler.
-	 * @param array $atts
-	 *              'attribution' adds an attribution block below the quote
-	 *              'person ' adds a person term
-	 * @param string $content
-	 * @return string
-	 */
-	public function pullquote_shortcode( $atts, $content = null )
+	public function render_quote( $type, $atts, $content )
 	{
 		//bail if no content
 		if ( is_null( $content ) )
@@ -98,75 +90,19 @@ class Go_Quotes
 		$attribution = $attributes['attribution'] ? $attributes['attribution'] : FALSE;
 
 		ob_start();
-		?>
-		<aside class="pullquote right" id="pullquote-<?php echo ++$this->pullquote_id; ?>">
-			<p class='content'>
-				<?php
-				echo esc_html( $content ); 
-				?>
-			</p>
-			<?php
-			if ( $attribution )
-			{
-				?>
-				<footer>
-					<cite>
-						<?php
-						if ( $person )
-						{ //if we have a person term, wrap it in a cite link
-							$term_link = is_wp_error( get_term_link( $person, $this->config()->taxonomy ) ) ? $this->config()->default_url . str_replace( ' ', '+', $attributes['person'] ) : get_term_link( $person, $this->config()->taxonomy );
-							?>
-							<a href="<?php echo $term_link ?>">
-							<?php
-						}//end if
-						echo esc_html( $attribution ); ?>
-						<?php
-						if ( $person )
-						{ 
-							?>
-							</a>
-							<?php
-						}//end if
-						?>
-					</cite>
-				</footer>
-				<?php 
-			}//end if
+		if ( 'pullquote' == $type )
+		{
 			?>
-			</aside>
-		<?php
-		return ob_get_clean();
-	} // end pullquote_shortcode
-
-	/**
-	 * Blockquote shortcode handler.
-	 * @param array $atts
-	 *              'attribution' adds an attribution block at the bottom of the blockquote
-	 *              'person ' adds a person term
-	 * @param string $content
-	 * @return string
-	 */
-	public function blockquote_shortcode( $atts, $content = null )
-	{
-		//bail if no content
-		if ( is_null( $content ) )
-		{
-			return;
+			<aside class="pullquote" id="pullquote-<?php echo ++$this->pullquote_id; ?>">
+			<?php
 		}//end if
-
-		$attributes = shortcode_atts(
-			array(
-				'attribution' => FALSE,
-				'person'      => FALSE,
-				),
-			$atts );
-
-		$person = $attributes['person'] ? str_replace( ' ', '-', $attributes['person'] ) : FALSE;
-		$attribution = $attributes['attribution'] ? $attributes['attribution'] : FALSE;
-
-		ob_start();
+		elseif ( 'blockquote' == $type )
+		{
+			?>
+			<blockquote  id="blockquote-<?php echo ++$this->blockquote_id; ?>">
+			<?php
+		}//end elseif
 		?>
-		<blockquote  id="blockquote-<?php echo ++$this->blockquote_id; ?>">
 			<p class='content'>
 				<?php
 				echo esc_html( $content );
@@ -181,15 +117,16 @@ class Go_Quotes
 						<?php
 						if ( $person )
 						{ //if we have a person term, wrap it in a cite link
-							$term_link = is_wp_error( get_term_link( $person, $this->config()->taxonomy ) ) ? $this->config()->default_url . str_replace( ' ', '+', $attributes['person'] ) : get_term_link( $person, $this->config()->taxonomy );
-							?>
-							<a href="<?php echo $term_link ?>">
-							<?php
+							if ( ! is_wp_error( get_term_link( $person, $this->config()->taxonomy ) ) )
+							{
+								?>
+								<a href="<?php echo get_term_link( $person, $this->config()->taxonomy ); ?>">
+								<?php
+							}//end if
 						}//end if
-						echo esc_html( $attribution ); ?>
-						<?php
+						echo esc_html( $attribution );
 						if ( $person )
-						{ 
+						{
 							?>
 							</a>
 							<?php
@@ -199,10 +136,45 @@ class Go_Quotes
 				</footer>
 				<?php
 			}//end if
-			?>
-		</blockquote>
-		<?php
+			if ( 'pullquote' == $type )
+			{
+				?>
+				</aside>
+				<?php
+			}//end if
+			elseif ( 'blockquote' == $type )
+			{
+				?>
+				</blockquote>
+				<?php
+			}//end elseif
 		return ob_get_clean();
+	}//end render_quote
+
+	/**
+	 * Pullquote shortcode handler.
+	 * @param array $atts
+	 *              'attribution' adds an attribution block below the quote
+	 *              'person ' adds a person term
+	 * @param string $content
+	 * @return string
+	 */
+	public function pullquote_shortcode( $atts, $content )
+	{
+		return $this->render_quote( 'pullquote', $atts, $content );
+	} // end pullquote_shortcode
+
+	/**
+	 * Blockquote shortcode handler.
+	 * @param array $atts
+	 *              'attribution' adds an attribution block at the bottom of the blockquote
+	 *              'person ' adds a person term
+	 * @param string $content
+	 * @return string
+	 */
+	public function blockquote_shortcode( $atts, $content = null )
+	{
+		return $this->render_quote( 'blockquote', $atts, $content );
 	} // end blockquote_shortcode
 
 	/**
@@ -214,7 +186,6 @@ class Go_Quotes
 	 */
 	public function quote_shortcode( $atts, $content = null )
 	{
-		error_log('inline');
 		//bail if no content
 		if ( is_null( $content ) )
 		{
@@ -227,11 +198,19 @@ class Go_Quotes
 				),
 			$atts );
 
-		$term_link = is_wp_error( get_term_link( $attributes['person'], $this->config()->taxonomy ) ) ? $this->config()->default_url . str_replace( ' ', '+', $attributes['person'] ) : get_term_link( $attributes['person'], $this->config()->taxonomy );
+		$term_link = is_wp_error( get_term_link( $attributes['person'], $this->config()->taxonomy ) ) ?  : get_term_link( $attributes['person'], $this->config()->taxonomy );
 
 		$cite = $attributes['person'] ? "cite='" . $term_link . "'": '';
 
-		$quote_string = "<q " . esc_html( $cite ) . "  id='quote-" . ++$this->inlinequote_id . "'>" . esc_html( $content ) . "</q>";
+		$quote_string = "<q";
+		if ( $person )
+		{ //if we have a person term, wrap it in a cite link
+			if ( ! is_wp_error( get_term_link( $person, $this->config()->taxonomy ) ) )
+			{
+				$quote_string .= " cite='" . get_term_link( $person, $this->config()->taxonomy ) . "'";
+			}
+		}//end if
+		$quote_string .= " id='quote-" . ++$this->inlinequote_id . "'>" . esc_html( $content ) . "</q>";
 		
 		return $quote_string;
 	} // end quote_shortcode
@@ -239,12 +218,12 @@ class Go_Quotes
 	// TinyMCE shizzle
 	
 	/**
-	 * Check for the rich text editor and user permissions
-	 * before adding the filters for our custom buttons
+	 * Check for the rich text editor before adding the filters for our custom buttons
+	 * NOTE: this won't work until we have button images
 	 */
 	public function add_buttons()
 	{
-		if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'edit_pages' ) && 'true' != get_user_option('rich_editing') )
+		if ( 'true' != get_user_option('rich_editing') )
 		{
 			return;
 		}//end if
