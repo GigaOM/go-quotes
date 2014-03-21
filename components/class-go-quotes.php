@@ -1,23 +1,18 @@
 <?php
 
-class Go_Quotes
+class GO_Quotes
 {
-	public $slug     = 'go-contact';
+	public $slug     = 'go-quotes';
 	public $content = '';
-	//counter variables
-	public $blockquote_id = 0;
-	public $inlinequote_id = 0;
-	public $pullquote_id = 0;
+	public $quote_id = 0;
 
 	/**
 	 * Initialize the plugin and register hooks.
 	 */
 	public function __construct()
 	{
-		add_action( 'admin_init', array( $this, 'add_buttons' ) );
-
-		add_action( 'admin_enqueue_scripts', array( $this, 'action_enqueue_scripts' ) );
-
+		add_action( 'admin_init', array( $this, 'admin_init' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'init', array( $this, 'init' ) );
 	} // end __construct
 
@@ -56,10 +51,16 @@ class Go_Quotes
 	} // END config
 
 	/** 
-	* Load js to add quicktags buttons
-	*/
-	public function action_enqueue_scripts()
+	 * Load js to add quicktags buttons
+	 */
+	public function admin_enqueue_scripts()
 	{
+		//Bail if we're not on an edit page
+		if( $hook != 'edit.php' )
+		{
+			return;
+		}//end if
+
 		wp_enqueue_script( 'edit_form_top', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags') );
 
 		wp_localize_script(
@@ -69,8 +70,17 @@ class Go_Quotes
 				'types' => $this->config()->quote_types
 			)
 		);
-	}//end action_enqueue_scripts
+	}//end admin_enqueue_scripts
 
+	/**
+	 * Render the block-level quotes.
+	 * @param string $type - the quote type
+	 * @param array $atts
+	 *              'attribution' adds an attribution block at the bottom of the blockquote
+	 *              'person ' adds a person term
+	 * @param string $content - the actual quote content
+	 * @return string
+	 */
 	public function render_quote( $type, $atts, $content )
 	{
 		//bail if no content
@@ -92,62 +102,50 @@ class Go_Quotes
 		ob_start();
 		if ( 'pullquote' == $type )
 		{
-			?>
-			<aside class="pullquote" id="pullquote-<?php echo ++$this->pullquote_id; ?>">
-			<?php
+			$quote_block_start = '<aside class="pullquote" id="pullquote-<?php echo ++$this->quote_id; ?>">';
+			$quote_block_end = '</aside>';
 		}//end if
 		elseif ( 'blockquote' == $type )
 		{
-			?>
-			<blockquote  id="blockquote-<?php echo ++$this->blockquote_id; ?>">
-			<?php
+			$quote_block_start = '<blockquote  id="blockquote-<?php echo ++$this->quote_id; ?>">';
+			$quote_block_end = '</blockquote>';
 		}//end elseif
+		echo  $quote_block_start;
 		?>
-			<p class='content'>
-				<?php
-				echo esc_html( $content );
-				?>
-			</p>
+		<p class='content'>
 			<?php
-			if ( $attribution )
-			{
-				?>
-				<footer>
-					<cite>
-						<?php
-						if ( $person )
-						{ //if we have a person term, wrap it in a cite link
-							if ( ! is_wp_error( get_term_link( $person, $this->config()->taxonomy ) ) )
-							{
-								?>
-								<a href="<?php echo get_term_link( $person, $this->config()->taxonomy ); ?>">
-								<?php
-							}//end if
-						}//end if
-						echo esc_html( $attribution );
-						if ( $person )
+			echo esc_html( $content );
+			?>
+		</p>
+		<?php
+		if ( $attribution )
+		{
+			?>
+			<footer>
+				<cite>
+					<?php
+					if ( $person )
+					{ //if we have a person term, wrap it in a cite link
+						if ( $cite_link = get_term_link( $person, $this->config()->taxonomy ) && ! is_wp_error( $cite_link ) )
 						{
 							?>
-							</a>
+							<a href="<?php echo $cite_link; ?>">
 							<?php
 						}//end if
+					}//end if
+					echo esc_html( $attribution );
+					if ( $person )
+					{
 						?>
-					</cite>
-				</footer>
-				<?php
-			}//end if
-			if ( 'pullquote' == $type )
-			{
-				?>
-				</aside>
-				<?php
-			}//end if
-			elseif ( 'blockquote' == $type )
-			{
-				?>
-				</blockquote>
-				<?php
-			}//end elseif
+						</a>
+						<?php
+					}//end if
+					?>
+				</cite>
+			</footer>
+			<?php
+		}//end if
+		echo $quote_block_end;
 		return ob_get_clean();
 	}//end render_quote
 
@@ -156,7 +154,7 @@ class Go_Quotes
 	 * @param array $atts
 	 *              'attribution' adds an attribution block below the quote
 	 *              'person ' adds a person term
-	 * @param string $content
+	 * @param string $content - the actual quote content
 	 * @return string
 	 */
 	public function pullquote_shortcode( $atts, $content )
@@ -169,7 +167,7 @@ class Go_Quotes
 	 * @param array $atts
 	 *              'attribution' adds an attribution block at the bottom of the blockquote
 	 *              'person ' adds a person term
-	 * @param string $content
+	 * @param string $content - the actual quote content
 	 * @return string
 	 */
 	public function blockquote_shortcode( $atts, $content = null )
@@ -181,7 +179,7 @@ class Go_Quotes
 	 * Inline quote shortcode handler.
 	 * @param array $atts
 	 *              'person ' adds a person term, and a cite attribute to the q tag
-	 * @param string $content
+	 * @param string $content - the actual quote content
 	 * @return string
 	 */
 	public function quote_shortcode( $atts, $content = null )
@@ -205,12 +203,12 @@ class Go_Quotes
 		$quote_string = "<q";
 		if ( $person )
 		{ //if we have a person term, wrap it in a cite link
-			if ( ! is_wp_error( get_term_link( $person, $this->config()->taxonomy ) ) )
+			if ( $cite_link = get_term_link( $person, $this->config()->taxonomy ) && ! is_wp_error( $cite_link ) )
 			{
-				$quote_string .= " cite='" . get_term_link( $person, $this->config()->taxonomy ) . "'";
+				$quote_string .= " cite='" . $cite_link . "'";
 			}
 		}//end if
-		$quote_string .= " id='quote-" . ++$this->inlinequote_id . "'>" . esc_html( $content ) . "</q>";
+		$quote_string .= " id='quote-" . ++$this->quote_id . "'>" . esc_html( $content ) . "</q>";
 		
 		return $quote_string;
 	} // end quote_shortcode
@@ -221,34 +219,34 @@ class Go_Quotes
 	 * Check for the rich text editor before adding the filters for our custom buttons
 	 * NOTE: this won't work until we have button images
 	 */
-	public function add_buttons()
+	public function admin_init()
 	{
-		if ( 'true' != get_user_option('rich_editing') )
+		//Bail if we're not on an edit page - or using the correct editor
+		if( $hook != 'edit.php' || 'true' != get_user_option('rich_editing') )
 		{
 			return;
 		}//end if
 
-		add_filter( 'mce_external_plugins', array( $this, 'tinymce_plugins' ) );
-		add_filter( 'mce_buttons', array( $this, 'tinymce_buttons' ) );
-	}//end add_buttons
+		add_filter( 'mce_external_plugins', array( $this, 'mce_external_plugins' ) );
+		add_filter( 'mce_buttons', array( $this, 'mce_buttons' ) );
+	}//end admin_init
 
 	/**
-	* Load the tinymce pluygin script
-	*/
-	public function tinymce_plugins( $plugins )
+	 * Load the tinymce pluygin script
+	 */
+	public function mce_external_plugins( $plugins )
 	{
 		$plugins['go-quotes'] = plugins_url( 'js/go-quotes-mce.js', __FILE__ );
 		return $plugins;
-	}//end tinymce_plugin
+	}//end mce_external_plugins
 
 	/**
 	 * Add our custom buttons to the tinymce button array
 	 */
-	public function tinymce_buttons( $buttons )
+	public function mce_buttons( $buttons )
 	{
 		//remove the default blockquote button - we're going to replace it
 		unset($buttons['b-quote']);
-
 		array_push( $buttons, 'separator' );
 
 		foreach( $this->config()->quote_types as $quote_type )
@@ -257,6 +255,6 @@ class Go_Quotes
 		}//end foreach
 
 		return $buttons;
-	}//end tinymce_buttons
+	}//end mce_buttons
 
 }// end class

@@ -8,5 +8,20 @@
  * @author Stephen Page <stephen.page@gigaom.com>
  */
 
-require_once __DIR__ . '/components/class-go-quotes.php';
-$go_quotes = new Go_Quotes();
+/**
+ * Singleton - Lazy-loaded
+ */
+function go_quotes()
+{
+	global $go_quotes;
+
+	if ( ! isset( $go_quotes ) || ! $go_quotes )
+	{
+		require_once __DIR__ . '/components/class-go-quotes.php';
+		$go_quotes = new GO_Quotes;
+	}//end if
+
+	return $go_quotes;
+}//end go_quotes
+
+go_quotes();
