@@ -222,18 +222,18 @@ class GO_Quotes
 				),
 			$atts );
 
-		$term_link = is_wp_error( get_term_link( $attributes['person'], $this->config( 'taxonomy' ) ) ) ?  : get_term_link( $attributes['person'], $this->config( 'taxonomy' ) );
-
-		$cite = $attributes['person'] ? "cite='" . $term_link . "'": '';
-
 		$quote_string = "<q";
-		if ( $person )
-		{ //if we have a person term, wrap it in a cite link
-			if ( $cite_link = get_term_link( $person, $this->config( 'taxonomy' ) ) && ! is_wp_error( $cite_link ) )
+
+		if ( $attributes['person'] )
+		{
+			//if we have a person term, wrap it in a cite link
+			$cite_link = get_term_link( $attributes['person'], $this->config( 'taxonomy' ) );
+			if ( ! is_wp_error( $cite_link ) )
 			{
 				$quote_string .= " cite='" . $cite_link . "'";
 			}
 		}// end if
+
 		$quote_string .= " id='quote-" . ++$this->quote_id . "'>" . esc_html( $content ) . "</q>";
 
 		return $quote_string;
@@ -313,3 +313,19 @@ class GO_Quotes
 	}// end mce_buttons
 
 }// end class
+
+
+/**
+ * GO_Alerts Singleton
+ */
+function go_quotes()
+{
+	global $go_quotes;
+
+	if ( ! $go_quotes )
+	{
+		$go_quotes = new GO_Quotes;
+	}//end if
+
+	return $go_quotes;
+}//end go_quotes
