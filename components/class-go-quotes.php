@@ -14,7 +14,8 @@ class GO_Quotes
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'init', array( $this, 'init' ) );
-	} // end __construct
+		add_filter( 'content_save_pre', array( $this, 'content_save_pre' ), 10, 1 );
+	}// end __construct
 
 	/**
 	 * Functions and actions to run on init
@@ -29,28 +30,52 @@ class GO_Quotes
 	/**
 	 *	Singleton for config data
 	 */
-	public function config()
+	private function config(  $key = NULL )
 	{
 		if ( ! isset( $this->config ) || ! $this->config )
 		{
-			$this->config = (object) apply_filters(
+			$this->config = apply_filters(
 				'go_config',
 				array(
 					'quote_types' => array(
-						'blockquote',
-						'pullquote',
-						'quote',
-					),
+							'blockquote',
+							'pullquote',
+							'quote',
+						),
 					'taxonomy'    => 'person',
 				),
 				$this->slug
 			);
-		} // END if
+		}// end if
+
+		if ( $key )
+		{
+			return isset( $this->config[ $key ] ) ? $this->config[ $key ] : NULL;
+		}// end if
 
 		return $this->config;
-	} // END config
+	}// end config
 
-	/** 
+
+	/**
+	 * lazy load the script config
+	 */
+	private function script_config( $key = NULL )
+	{
+		if ( ! isset( $this->script_config ) )
+		{
+			$this->script_config = apply_filters( 'go_config', array( 'version' => 1 ), 'go-script-version' );
+		}// end if
+
+		if ( $key )
+		{
+			return isset( $this->script_config[ $key ] ) ? $this->script_config[ $key ] : NULL;
+		}// end if
+
+		return $this->script_config;
+	}// end script_config
+
+	/**
 	 * Load js to add quicktags buttons
 	 */
 	public function admin_enqueue_scripts()
@@ -59,18 +84,18 @@ class GO_Quotes
 		if( $hook != 'edit.php' )
 		{
 			return;
-		}//end if
+		}// end if
 
-		wp_enqueue_script( 'edit_form_top', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags') );
+		wp_enqueue_script( 'edit_form_top', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags'), $this->script_config( 'version' ) );
 
 		wp_localize_script(
 			'go-quotes-qt',
 			'go_quote_types',
 			array(
-				'types' => $this->config()->quote_types
+				'types' => $this->config( 'quote_types' )
 			)
 		);
-	}//end admin_enqueue_scripts
+	}// end admin_enqueue_scripts
 
 	/**
 	 * Render the block-level quotes.
@@ -87,7 +112,7 @@ class GO_Quotes
 		if ( is_null( $content ) )
 		{
 			return;
-		}//end if
+		}// end if
 
 		$attributes = shortcode_atts(
 			array(
@@ -104,12 +129,12 @@ class GO_Quotes
 		{
 			$quote_block_start = '<aside class="pullquote" id="pullquote-<?php echo ++$this->quote_id; ?>">';
 			$quote_block_end = '</aside>';
-		}//end if
+		}// end if
 		elseif ( 'blockquote' == $type )
 		{
 			$quote_block_start = '<blockquote  id="blockquote-<?php echo ++$this->quote_id; ?>">';
 			$quote_block_end = '</blockquote>';
-		}//end elseif
+		}// end elseif
 		echo  $quote_block_start;
 		?>
 		<p class='content'>
@@ -124,30 +149,31 @@ class GO_Quotes
 			<footer>
 				<cite>
 					<?php
+					//if we have a person term, wrap it in a cite link
 					if ( $person )
-					{ //if we have a person term, wrap it in a cite link
-						if ( $cite_link = get_term_link( $person, $this->config()->taxonomy ) && ! is_wp_error( $cite_link ) )
+					{
+						if ( $cite_link = get_term_link( $person, $this->config( 'taxonomy' ) ) && ! is_wp_error( $cite_link ) )
 						{
 							?>
 							<a href="<?php echo $cite_link; ?>">
 							<?php
-						}//end if
-					}//end if
+						}// end if
+					}// end if
 					echo esc_html( $attribution );
 					if ( $person )
 					{
 						?>
 						</a>
 						<?php
-					}//end if
+					}// end if
 					?>
 				</cite>
 			</footer>
 			<?php
-		}//end if
+		}// end if
 		echo $quote_block_end;
 		return ob_get_clean();
-	}//end render_quote
+	}// end render_quote
 
 	/**
 	 * Pullquote shortcode handler.
@@ -160,7 +186,7 @@ class GO_Quotes
 	public function pullquote_shortcode( $atts, $content )
 	{
 		return $this->render_quote( 'pullquote', $atts, $content );
-	} // end pullquote_shortcode
+	}// end pullquote_shortcode
 
 	/**
 	 * Blockquote shortcode handler.
@@ -173,7 +199,7 @@ class GO_Quotes
 	public function blockquote_shortcode( $atts, $content = null )
 	{
 		return $this->render_quote( 'blockquote', $atts, $content );
-	} // end blockquote_shortcode
+	}// end blockquote_shortcode
 
 	/**
 	 * Inline quote shortcode handler.
@@ -188,7 +214,7 @@ class GO_Quotes
 		if ( is_null( $content ) )
 		{
 			return;
-		}//end if
+		}// end if
 
 		$attributes = shortcode_atts(
 			array(
@@ -196,25 +222,55 @@ class GO_Quotes
 				),
 			$atts );
 
-		$term_link = is_wp_error( get_term_link( $attributes['person'], $this->config()->taxonomy ) ) ?  : get_term_link( $attributes['person'], $this->config()->taxonomy );
+		$term_link = is_wp_error( get_term_link( $attributes['person'], $this->config( 'taxonomy' ) ) ) ?  : get_term_link( $attributes['person'], $this->config( 'taxonomy' ) );
 
 		$cite = $attributes['person'] ? "cite='" . $term_link . "'": '';
 
 		$quote_string = "<q";
 		if ( $person )
 		{ //if we have a person term, wrap it in a cite link
-			if ( $cite_link = get_term_link( $person, $this->config()->taxonomy ) && ! is_wp_error( $cite_link ) )
+			if ( $cite_link = get_term_link( $person, $this->config( 'taxonomy' ) ) && ! is_wp_error( $cite_link ) )
 			{
 				$quote_string .= " cite='" . $cite_link . "'";
 			}
-		}//end if
+		}// end if
 		$quote_string .= " id='quote-" . ++$this->quote_id . "'>" . esc_html( $content ) . "</q>";
-		
-		return $quote_string;
-	} // end quote_shortcode
 
-	// TinyMCE shizzle
-	
+		return $quote_string;
+	}// end quote_shortcode
+
+	public function content_save_pre( $content )
+	{
+		// check that this isn't an autosave
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+		{
+			return;
+		}//end if
+
+		/*
+		* regex out the shortcode args
+		* pattern needs three slashes because that's what works:
+		* wp escapes quotes for sql prior to this
+		*/
+		$pattern = '/(?<=person=\\\["\'])(\w+\s?\w+)(?=\\\["\'])/';
+		preg_match_all ( $pattern , $content, $matches );
+
+		//remove duplicate terms before we loop through them
+		$terms = array_unique( $matches );
+
+		$post_id = get_the_id();
+
+		//append the term(s)
+		foreach ( $terms as $term )
+		{
+			wp_set_post_terms( $post_id, $term, $this->config( 'taxonomy' ), TRUE );
+		}// end foreach
+
+		return $content;
+	}// end add_person_term
+
+	/* TinyMCE shizzle */
+
 	/**
 	 * Check for the rich text editor before adding the filters for our custom buttons
 	 * NOTE: this won't work until we have button images
@@ -225,11 +281,11 @@ class GO_Quotes
 		if( $hook != 'edit.php' || 'true' != get_user_option('rich_editing') )
 		{
 			return;
-		}//end if
+		}// end if
 
 		add_filter( 'mce_external_plugins', array( $this, 'mce_external_plugins' ) );
 		add_filter( 'mce_buttons', array( $this, 'mce_buttons' ) );
-	}//end admin_init
+	}// end admin_init
 
 	/**
 	 * Load the tinymce pluygin script
@@ -238,7 +294,7 @@ class GO_Quotes
 	{
 		$plugins['go-quotes'] = plugins_url( 'js/go-quotes-mce.js', __FILE__ );
 		return $plugins;
-	}//end mce_external_plugins
+	}// end mce_external_plugins
 
 	/**
 	 * Add our custom buttons to the tinymce button array
@@ -249,12 +305,12 @@ class GO_Quotes
 		unset($buttons['b-quote']);
 		array_push( $buttons, 'separator' );
 
-		foreach( $this->config()->quote_types as $quote_type )
+		foreach( $this->config( 'quote_types' ) as $quote_type )
 		{
 			array_push( $buttons, $quote_type );
-		}//end foreach
+		}// end foreach
 
 		return $buttons;
-	}//end mce_buttons
+	}// end mce_buttons
 
 }// end class
