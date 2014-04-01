@@ -78,7 +78,7 @@ class GO_Quotes
 	/**
 	 * Load js to add quicktags buttons
 	 */
-	public function admin_enqueue_scripts()
+	public function admin_enqueue_scripts( $hook )
 	{
 		//Bail if we're not on an edit page
 		if( $hook != 'edit.php' )
@@ -239,6 +239,11 @@ class GO_Quotes
 		return $quote_string;
 	}// end quote_shortcode
 
+	/**
+	 * Hooks to the content_save_pre action and looks though the content for
+	 * person attributes ( specifically person="NAME")
+	 * then adds the name to the post as a person term
+	 */
 	public function content_save_pre( $content )
 	{
 		// check that this isn't an autosave
@@ -277,12 +282,6 @@ class GO_Quotes
 	 */
 	public function admin_init()
 	{
-		//Bail if we're not on an edit page - or using the correct editor
-		if( $hook != 'edit.php' || 'true' != get_user_option('rich_editing') )
-		{
-			return;
-		}// end if
-
 		add_filter( 'mce_external_plugins', array( $this, 'mce_external_plugins' ) );
 		add_filter( 'mce_buttons', array( $this, 'mce_buttons' ) );
 	}// end admin_init
