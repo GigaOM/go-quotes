@@ -81,18 +81,18 @@ class GO_Quotes
 	public function admin_enqueue_scripts( $hook )
 	{
 		//Bail if we're not on an edit page
-		if( $hook != 'edit.php' )
+		if ( $hook != 'edit.php' )
 		{
 			return;
 		}// end if
 
-		wp_enqueue_script( 'edit_form_top', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array('quicktags'), $this->script_config( 'version' ) );
+		wp_enqueue_script( 'edit_form_top', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array( 'quicktags' ), $this->script_config( 'version' ) );
 
 		wp_localize_script(
 			'go-quotes-qt',
 			'go_quote_types',
 			array(
-				'types' => $this->config( 'quote_types' )
+				'types' => $this->config( 'quote_types' ),
 			)
 		);
 	}// end admin_enqueue_scripts
@@ -123,55 +123,91 @@ class GO_Quotes
 
 		$person = $attributes['person'] ? str_replace( ' ', '-', $attributes['person'] ) : FALSE;
 		$attribution = $attributes['attribution'] ? $attributes['attribution'] : FALSE;
+		if ( $person )
+		{
+			$cite_link = get_term_link( $attributes['person'], $this->config( 'taxonomy' ) );
+		}//end if
 
 		ob_start();
-		if ( 'pullquote' == $type )
+		if ( 'pullquote' == $type || 'blockquote' == $type )
 		{
-			$quote_block_start = '<aside class="pullquote" id="pullquote-<?php echo ++$this->quote_id; ?>">';
-			$quote_block_end = '</aside>';
-		}// end if
-		elseif ( 'blockquote' == $type )
-		{
-			$quote_block_start = '<blockquote  id="blockquote-<?php echo ++$this->quote_id; ?>">';
-			$quote_block_end = '</blockquote>';
-		}// end elseif
-		echo  $quote_block_start;
-		?>
-		<p class='content'>
-			<?php
+			switch ( $type )
+			{
+				case 'pullquote':
+					$quote_block_start         = '<aside class="pullquote" id="quote-' . ++$this->quote_id . '">';
+					$content                   = '<p class="content">' . $content . '</p>';
+					$attribution_cite_link     = ( $attribution ) ? '<a href="' . $cite_link . '">' . $attribution . '</a>' : '';
+					$attribution_wrapper_start = '<footer><cite>';
+					$attribution_wrapper_end   = '</footer></cite>';
+					$quote_block_end           = '</aside>';
+					break;
+
+				case 'blockquote':
+					$quote_block_start         = '<blockquote id="quote-' . ++$this->quote_id . '">';
+					$content                   = '<p class="content">' . $content . '</p>';
+					$attribution_cite_link     = ( $attribution ) ? '<a href="' . $cite_link . '">' . $attribution . '</a>' : '';
+					$attribution_wrapper_start = '<footer><cite>';
+					$attribution_wrapper_end   = '</footer></cite>';
+					$quote_block_end           = '</blockquote>';
+					break;
+
+				default:
+					$quote_block_start         = '<q id="quote-' . ++$this->quote_id;
+					$content                   = $content;
+					$attribution_cite_link     = ' cite="' . $cite_link . '"';
+					$attribution_wrapper_start = '<footer><cite>';
+					$attribution_wrapper_end   = '</footer></cite>';
+					$quote_block_end           = '</q>';
+					break;
+			}//end switch
+
+			echo  $quote_block_start;
+
 			echo esc_html( $content );
-			?>
-		</p>
-		<?php
-		if ( $attribution )
-		{
-			?>
-			<footer>
-				<cite>
-					<?php
-					//if we have a person term, wrap it in a cite link
-					if ( $person )
-					{
-						if ( $cite_link = get_term_link( $person, $this->config( 'taxonomy' ) ) && ! is_wp_error( $cite_link ) )
-						{
-							?>
-							<a href="<?php echo $cite_link; ?>">
-							<?php
-						}// end if
-					}// end if
-					echo esc_html( $attribution );
-					if ( $person )
+
+			if ( $attribution )
+			{
+				echo $attribution_wrapper_start;
+
+				//if we have a person term, wrap it in a cite link
+				if ( $person )
+				{
+					if ( ! is_wp_error( $cite_link ) )
 					{
 						?>
-						</a>
+						<a href="<?php echo $cite_link; ?>">
 						<?php
 					}// end if
+				}// end if
+				echo esc_html( $attribution );
+				if ( $person )
+				{
 					?>
-				</cite>
-			</footer>
-			<?php
-		}// end if
-		echo $quote_block_end;
+					</a>
+					<?php
+				}// end if
+				echo $attribution_wrapper_end;
+			}// end if
+			echo $quote_block_end;
+		}//end if
+		else
+		{
+			// $type = 'quote'
+			$quote_string = '<q';
+
+			if ( $attributes['person'] )
+			{
+				//if we have a person term, wrap it in a cite link
+				if ( ! is_wp_error( $cite_link ) )
+				{
+					$quote_string .= " cite='" . $cite_link . "'";
+				}
+			}// end if
+
+			$quote_string .= " id='quote-" . ++$this->quote_id . "'>" . esc_html( $content ) . '</q>';
+
+			echo $quote_string;
+		}//end else
 		return ob_get_clean();
 	}// end render_quote
 
@@ -210,33 +246,7 @@ class GO_Quotes
 	 */
 	public function quote_shortcode( $atts, $content = null )
 	{
-		//bail if no content
-		if ( is_null( $content ) )
-		{
-			return;
-		}// end if
-
-		$attributes = shortcode_atts(
-			array(
-				'person'      => FALSE
-				),
-			$atts );
-
-		$quote_string = "<q";
-
-		if ( $attributes['person'] )
-		{
-			//if we have a person term, wrap it in a cite link
-			$cite_link = get_term_link( $attributes['person'], $this->config( 'taxonomy' ) );
-			if ( ! is_wp_error( $cite_link ) )
-			{
-				$quote_string .= " cite='" . $cite_link . "'";
-			}
-		}// end if
-
-		$quote_string .= " id='quote-" . ++$this->quote_id . "'>" . esc_html( $content ) . "</q>";
-
-		return $quote_string;
+		return $this->render_quote( 'quote', $atts, $content );
 	}// end quote_shortcode
 
 	/**
@@ -258,7 +268,7 @@ class GO_Quotes
 		* wp escapes quotes for sql prior to this
 		*/
 		$pattern = '/(?<=person=\\\["\'])(\w+\s?\w+)(?=\\\["\'])/';
-		preg_match_all ( $pattern , $content, $matches );
+		preg_match_all ( $pattern, $content, $matches );
 
 		//remove duplicate terms before we loop through them
 		$terms = array_unique( $matches );
@@ -272,7 +282,7 @@ class GO_Quotes
 		}// end foreach
 
 		return $content;
-	}// end add_person_term
+	}// end content_save_pre
 
 	/* TinyMCE shizzle */
 
@@ -301,17 +311,16 @@ class GO_Quotes
 	public function mce_buttons( $buttons )
 	{
 		//remove the default blockquote button - we're going to replace it
-		unset($buttons['b-quote']);
+		unset( $buttons['b-quote'] );
 		array_push( $buttons, 'separator' );
 
-		foreach( $this->config( 'quote_types' ) as $quote_type )
+		foreach ( $this->config( 'quote_types' ) as $quote_type )
 		{
 			array_push( $buttons, $quote_type );
 		}// end foreach
 
 		return $buttons;
 	}// end mce_buttons
-
 }// end class
 
 
