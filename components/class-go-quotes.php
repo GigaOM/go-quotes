@@ -3,7 +3,6 @@
 class GO_Quotes
 {
 	public $slug     = 'go-quotes';
-	public $content = '';
 	public $quote_id = 0;
 
 	/**
@@ -14,7 +13,7 @@ class GO_Quotes
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'init', array( $this, 'init' ) );
-		add_filter( 'content_save_pre', array( $this, 'content_save_pre' ), 10, 1 );
+		add_filter( 'save_post', array( $this, 'save_post' ), 10, 1 );
 	}// end __construct
 
 	/**
@@ -75,6 +74,44 @@ class GO_Quotes
 		return $this->script_config;
 	}// end script_config
 
+	/* TinyMCE shizzle */
+
+	/**
+	 * Check for the rich text editor before adding the filters for our custom buttons
+	 * NOTE: this won't work until we have button images
+	 */
+	public function admin_init()
+	{
+		add_filter( 'mce_external_plugins', array( $this, 'mce_external_plugins' ) );
+		add_filter( 'mce_buttons', array( $this, 'mce_buttons' ) );
+	}// end admin_init
+
+	/**
+	 * Load the tinymce pluygin script
+	 */
+	public function mce_external_plugins( $plugins )
+	{
+		$plugins['go-quotes'] = plugins_url( 'js/go-quotes-mce.js', __FILE__ );
+		return $plugins;
+	}// end mce_external_plugins
+
+	/**
+	 * Add our custom buttons to the tinymce button array
+	 */
+	public function mce_buttons( $buttons )
+	{
+		//remove the default blockquote button - we're going to replace it
+		unset( $buttons['b-quote'] );
+		array_push( $buttons, 'separator' );
+
+		foreach ( $this->config( 'quote_types' ) as $quote_type )
+		{
+			array_push( $buttons, $quote_type );
+		}// end foreach
+
+		return $buttons;
+	}// end mce_buttons
+
 	/**
 	 * Load js to add quicktags buttons
 	 */
@@ -109,7 +146,7 @@ class GO_Quotes
 	public function render_quote( $type, $atts, $content )
 	{
 		//bail if no content
-		if ( is_null( $content ) )
+		if ( is_null( $content ) || is_admin() )
 		{
 			return;
 		}// end if
@@ -175,7 +212,7 @@ class GO_Quotes
 					if ( ! is_wp_error( $cite_link ) )
 					{
 						?>
-						<a href="<?php echo $cite_link; ?>">
+						<a href='<?php echo $cite_link; ?>'>
 						<?php
 					}// end if
 				}// end if
@@ -200,11 +237,11 @@ class GO_Quotes
 				//if we have a person term, wrap it in a cite link
 				if ( ! is_wp_error( $cite_link ) )
 				{
-					$quote_string .= " cite='" . $cite_link . "'";
+					$quote_string .= ' cite="' . $cite_link . '"';
 				}
 			}// end if
 
-			$quote_string .= " id='quote-" . ++$this->quote_id . "'>" . esc_html( $content ) . '</q>';
+			$quote_string .= ' id="quote-' . ++$this->quote_id . '">' . esc_html( $content ) . '</q>';
 
 			echo $quote_string;
 		}//end else
@@ -250,11 +287,11 @@ class GO_Quotes
 	}// end quote_shortcode
 
 	/**
-	 * Hooks to the content_save_pre action and looks though the content for
+	 * Hooks to the save_post action and looks though the content for
 	 * person attributes ( specifically person="NAME")
 	 * then adds the name to the post as a person term
 	 */
-	public function content_save_pre( $content )
+	public function save_post( $post_id )
 	{
 		// check that this isn't an autosave
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
@@ -262,65 +299,21 @@ class GO_Quotes
 			return;
 		}//end if
 
+		$content = get_post( $post_id )->post_content;
 		/*
 		* regex out the shortcode args
 		* pattern needs three slashes because that's what works:
 		* wp escapes quotes for sql prior to this
 		*/
-		$pattern = '/(?<=person=\\\["\'])(\w+\s?\w+)(?=\\\["\'])/';
+		$pattern = '/(?<=person=["\'])(\w+\s?\w+)(?=["\'])/';
 		preg_match_all( $pattern, $content, $matches );
 
 		//remove duplicate terms before we loop through them
 		$terms = array_unique( $matches[0] );
 
-		$post_id = get_the_id();
-
 		//append the term(s)
-		foreach ( $terms as $term )
-		{
-			wp_set_post_terms( $post_id, $term, $this->config( 'taxonomy' ), TRUE );
-		}// end foreach
-
-		return $content;
-	}// end content_save_pre
-
-	/* TinyMCE shizzle */
-
-	/**
-	 * Check for the rich text editor before adding the filters for our custom buttons
-	 * NOTE: this won't work until we have button images
-	 */
-	public function admin_init()
-	{
-		add_filter( 'mce_external_plugins', array( $this, 'mce_external_plugins' ) );
-		add_filter( 'mce_buttons', array( $this, 'mce_buttons' ) );
-	}// end admin_init
-
-	/**
-	 * Load the tinymce pluygin script
-	 */
-	public function mce_external_plugins( $plugins )
-	{
-		$plugins['go-quotes'] = plugins_url( 'js/go-quotes-mce.js', __FILE__ );
-		return $plugins;
-	}// end mce_external_plugins
-
-	/**
-	 * Add our custom buttons to the tinymce button array
-	 */
-	public function mce_buttons( $buttons )
-	{
-		//remove the default blockquote button - we're going to replace it
-		unset( $buttons['b-quote'] );
-		array_push( $buttons, 'separator' );
-
-		foreach ( $this->config( 'quote_types' ) as $quote_type )
-		{
-			array_push( $buttons, $quote_type );
-		}// end foreach
-
-		return $buttons;
-	}// end mce_buttons
+		$termites = wp_set_post_terms( $post_id, $terms, $this->config( 'taxonomy' ), TRUE );
+	}// end save_post
 }// end class
 
 
