@@ -135,7 +135,7 @@ class GO_Quotes
 			{
 				case 'pullquote':
 					$quote_block_start         = '<aside class="pullquote" id="quote-' . ++$this->quote_id . '">';
-					$content                   = '<p class="content">' . $content . '</p>';
+					$content                   = '<p class="content">' . esc_html( $content ) . '</p>';
 					$attribution_cite_link     = ( $attribution ) ? '<a href="' . $cite_link . '">' . $attribution . '</a>' : '';
 					$attribution_wrapper_start = '<footer><cite>';
 					$attribution_wrapper_end   = '</footer></cite>';
@@ -144,7 +144,7 @@ class GO_Quotes
 
 				case 'blockquote':
 					$quote_block_start         = '<blockquote id="quote-' . ++$this->quote_id . '">';
-					$content                   = '<p class="content">' . $content . '</p>';
+					$content                   = '<p class="content">' . esc_html( $content ) . '</p>';
 					$attribution_cite_link     = ( $attribution ) ? '<a href="' . $cite_link . '">' . $attribution . '</a>' : '';
 					$attribution_wrapper_start = '<footer><cite>';
 					$attribution_wrapper_end   = '</footer></cite>';
@@ -153,7 +153,7 @@ class GO_Quotes
 
 				default:
 					$quote_block_start         = '<q id="quote-' . ++$this->quote_id;
-					$content                   = $content;
+					$content                   = esc_html( $content );
 					$attribution_cite_link     = ' cite="' . $cite_link . '"';
 					$attribution_wrapper_start = '<footer><cite>';
 					$attribution_wrapper_end   = '</footer></cite>';
@@ -163,7 +163,7 @@ class GO_Quotes
 
 			echo  $quote_block_start;
 
-			echo esc_html( $content );
+			echo $content;
 
 			if ( $attribution )
 			{
@@ -268,10 +268,10 @@ class GO_Quotes
 		* wp escapes quotes for sql prior to this
 		*/
 		$pattern = '/(?<=person=\\\["\'])(\w+\s?\w+)(?=\\\["\'])/';
-		preg_match_all ( $pattern, $content, $matches );
+		preg_match_all( $pattern, $content, $matches );
 
 		//remove duplicate terms before we loop through them
-		$terms = array_unique( $matches );
+		$terms = array_unique( $matches[0] );
 
 		$post_id = get_the_id();
 
