@@ -168,43 +168,45 @@ class GO_Quotes
 		ob_start();
 		if ( 'pullquote' == $type || 'blockquote' == $type )
 		{
+			//set some defaults
+			$wrapped_content               = '<p class="content">' . esc_html( $content ) . '</p>';
+			$attribution_cite_link = ( $attribution ) ? '<a href="' . $cite_link . '">' . $attribution . '</a>' : '';
+			$attribution_start     = '<footer><cite>';
+			$attribution_end       = '</cite></footer>';
+			$wrapper_start         = '';
+			$wrapper_end           = '';
+
 			switch ( $type )
 			{
 				case 'pullquote':
-					$quote_block_start         = '<aside class="pullquote" id="quote-' . ++$this->quote_id . '">';
-					$content                   = '<p class="content">' . esc_html( $content ) . '</p>';
-					$attribution_cite_link     = ( $attribution ) ? '<a href="' . $cite_link . '">' . $attribution . '</a>' : '';
-					$attribution_wrapper_start = '<footer><cite>';
-					$attribution_wrapper_end   = '</footer></cite>';
-					$quote_block_end           = '</aside>';
+					$quote_block_start     = '<aside class="pullquote" id="quote-' . ++$this->quote_id . '">';
+					$quote_block_end       = '</aside>';
+					$wrapper_start         = '<div class="boxed">';
+					$wrapper_end           = '</div>';
 					break;
 
 				case 'blockquote':
-					$quote_block_start         = '<blockquote id="quote-' . ++$this->quote_id . '">';
-					$content                   = '<p class="content">' . esc_html( $content ) . '</p>';
-					$attribution_cite_link     = ( $attribution ) ? '<a href="' . $cite_link . '">' . $attribution . '</a>' : '';
-					$attribution_wrapper_start = '<footer><cite>';
-					$attribution_wrapper_end   = '</footer></cite>';
-					$quote_block_end           = '</blockquote>';
+					$quote_block_start     = '<blockquote id="quote-' . ++$this->quote_id . '">';
+					$quote_block_end       = '</blockquote>';
 					break;
 
 				default:
-					$quote_block_start         = '<q id="quote-' . ++$this->quote_id;
-					$content                   = esc_html( $content );
-					$attribution_cite_link     = ' cite="' . $cite_link . '"';
-					$attribution_wrapper_start = '<footer><cite>';
-					$attribution_wrapper_end   = '</footer></cite>';
-					$quote_block_end           = '</q>';
+					$quote_block_start     = '<q id="quote-' . ++$this->quote_id;
+					$wrapped_content               = esc_html( $content );
+					$attribution_cite_link = ' cite="' . $cite_link . '"';
+					$quote_block_end       = '</q>';
 					break;
 			}//end switch
 
 			echo  $quote_block_start;
 
-			echo $content;
+			echo $wrapper_start;
+
+			echo $wrapped_content;
 
 			if ( $attribution )
 			{
-				echo $attribution_wrapper_start;
+				echo $attribution_start;
 
 				//if we have a person term, wrap it in a cite link
 				if ( $person )
@@ -223,8 +225,17 @@ class GO_Quotes
 					</a>
 					<?php
 				}// end if
-				echo $attribution_wrapper_end;
+				echo $attribution_end;
 			}// end if
+
+			echo $wrapper_end;
+
+			echo '<div class="social">';
+			//these are placeholder links until I get bsocial to play nice
+			echo '<a href="' . go_local_bsocial()->build_twitter_url( $post, get_permalink( $post->ID ), esc_html( $content ), 'quote', FALSE, '#quote-' . $this->quote_id ) . '" title="Share on Twitter" class="goicon icon-twitter-circled"></a>';
+			echo '<a href="' . go_local_bsocial()->build_facebook_url( $post, get_permalink( $post->ID ), FALSE, '#quote-' . $this->quote_id, esc_html( $content ) ) . '" title="Share on Facebook" class="goicon icon-facebook-circled"></a>';
+			echo '<a href="' . esc_url( $_SERVER['REQUEST_URI'] . '#quote-' . $this->quote_id ) . '" class="goicon icon-linkedin-circled"></a>';
+			echo '</div>';
 			echo $quote_block_end;
 		}//end if
 		else
@@ -302,8 +313,6 @@ class GO_Quotes
 		$content = get_post( $post_id )->post_content;
 		/*
 		* regex out the shortcode args
-		* pattern needs three slashes because that's what works:
-		* wp escapes quotes for sql prior to this
 		*/
 		$pattern = '/(?<=person=["\'])(\w+\s?\w+)(?=["\'])/';
 		preg_match_all( $pattern, $content, $matches );
