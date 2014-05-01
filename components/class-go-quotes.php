@@ -2,8 +2,12 @@
 
 class GO_Quotes
 {
-	public $slug     = 'go-quotes';
-	public $quote_id = 0;
+	//Set to TRUE when we are parsing the shortcodes on save.
+	public $is_save_post = FALSE;
+	//Store $post_ID from save_post action.
+	public $post_id      = NULL;
+	public $quote_id     = 0;
+	public $slug         = 'go-quotes';
 
 	/**
 	 * Initialize the plugin and register hooks.
@@ -13,7 +17,7 @@ class GO_Quotes
 		add_action( 'admin_init', array( $this, 'admin_init' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'init', array( $this, 'init' ) );
-		add_filter( 'save_post', array( $this, 'save_post' ), 10, 1 );
+		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
 	}// end __construct
 
 	/**
@@ -269,6 +273,11 @@ class GO_Quotes
 	 */
 	public function pullquote_shortcode( $atts, $content )
 	{
+		if ( $this->is_save_post )
+		{
+			return $this->do_shortcode_save( $atts, $content );
+		}//end if
+
 		return $this->render_quote( 'pullquote', $atts, $content );
 	}// end pullquote_shortcode
 
@@ -280,8 +289,13 @@ class GO_Quotes
 	 * @param string $content - the actual quote content
 	 * @return string
 	 */
-	public function blockquote_shortcode( $atts, $content = null )
+	public function blockquote_shortcode( $atts, $content = NULL )
 	{
+		if ( $this->is_save_post )
+		{
+			return $this->do_shortcode_save( $atts, $content );
+		}//end if
+
 		return $this->render_quote( 'blockquote', $atts, $content );
 	}// end blockquote_shortcode
 
@@ -292,17 +306,30 @@ class GO_Quotes
 	 * @param string $content - the actual quote content
 	 * @return string
 	 */
-	public function quote_shortcode( $atts, $content = null )
+	public function quote_shortcode( $atts, $content = NULL )
 	{
+		if ( $this->is_save_post )
+		{
+			return $this->do_shortcode_save( $atts, $content );
+		}//end if
+
 		return $this->render_quote( 'quote', $atts, $content );
 	}// end quote_shortcode
+
+	public function do_shortcode_save( $atts )
+	{
+		if ( isset( $atts[ $this->config( 'taxonomy' ) ] ) )
+		{
+			wp_set_post_terms( $this->post_id, $atts[ $this->config( 'taxonomy' ) ], $this->config( 'taxonomy' ), TRUE );
+		}//end if
+	}//end do_shortcode_save
 
 	/**
 	 * Hooks to the save_post action and looks though the content for
 	 * person attributes ( specifically person="NAME")
 	 * then adds the name to the post as a person term
 	 */
-	public function save_post( $post_id )
+	public function save_post( $unused_post_id, $post )
 	{
 		// check that this isn't an autosave
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
@@ -310,18 +337,14 @@ class GO_Quotes
 			return;
 		}//end if
 
-		$content = get_post( $post_id )->post_content;
-		/*
-		* regex out the shortcode args
-		*/
-		$pattern = '/(?<=person=["\'])(\w+\s?\w+)(?=["\'])/';
-		preg_match_all( $pattern, $content, $matches );
+		$this->is_save_post = TRUE;
+		$this->post_id = $post->ID;
 
-		//remove duplicate terms before we loop through them
-		$terms = array_unique( $matches[0] );
+		$content = $post->post_content;
+		do_shortcode( $content );
 
-		//append the term(s)
-		$termites = wp_set_post_terms( $post_id, $terms, $this->config( 'taxonomy' ), TRUE );
+		$this->is_save_post = FALSE;
+		$this->post_id = NULL;
 	}// end save_post
 }// end class
 
