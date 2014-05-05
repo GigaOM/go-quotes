@@ -149,6 +149,13 @@ class GO_Quotes
 	 */
 	public function render_quote( $type, $atts, $content )
 	{
+		//check if we're saving and add person terms
+		if ( isset( $atts[ 'person' ] ) && $this->is_save_post )
+		{
+			wp_set_post_terms( $this->post_id, $atts[ 'person' ], $this->config( 'taxonomy' ), TRUE );
+			return;
+		}//end if
+
 		//bail if no content
 		if ( is_null( $content ) || is_admin() )
 		{
@@ -160,13 +167,14 @@ class GO_Quotes
 				'attribution' => FALSE,
 				'person'      => FALSE,
 				),
-			$atts );
+			$atts
+		);
 
 		$person = $attributes['person'] ? str_replace( ' ', '-', $attributes['person'] ) : FALSE;
 		$attribution = $attributes['attribution'] ? $attributes['attribution'] : FALSE;
 		if ( $person )
 		{
-			$cite_link = get_term_link( $attributes['person'], $this->config( 'taxonomy' ) );
+			$cite_link = get_term_link( $attributes['person'], 'person' );
 		}//end if
 
 		ob_start();
@@ -273,11 +281,6 @@ class GO_Quotes
 	 */
 	public function pullquote_shortcode( $atts, $content )
 	{
-		if ( $this->is_save_post )
-		{
-			return $this->do_shortcode_save( $atts, $content );
-		}//end if
-
 		return $this->render_quote( 'pullquote', $atts, $content );
 	}// end pullquote_shortcode
 
@@ -291,11 +294,6 @@ class GO_Quotes
 	 */
 	public function blockquote_shortcode( $atts, $content = NULL )
 	{
-		if ( $this->is_save_post )
-		{
-			return $this->do_shortcode_save( $atts, $content );
-		}//end if
-
 		return $this->render_quote( 'blockquote', $atts, $content );
 	}// end blockquote_shortcode
 
@@ -308,28 +306,15 @@ class GO_Quotes
 	 */
 	public function quote_shortcode( $atts, $content = NULL )
 	{
-		if ( $this->is_save_post )
-		{
-			return $this->do_shortcode_save( $atts, $content );
-		}//end if
-
 		return $this->render_quote( 'quote', $atts, $content );
 	}// end quote_shortcode
-
-	public function do_shortcode_save( $atts )
-	{
-		if ( isset( $atts[ $this->config( 'taxonomy' ) ] ) )
-		{
-			wp_set_post_terms( $this->post_id, $atts[ $this->config( 'taxonomy' ) ], $this->config( 'taxonomy' ), TRUE );
-		}//end if
-	}//end do_shortcode_save
 
 	/**
 	 * Hooks to the save_post action and looks though the content for
 	 * person attributes ( specifically person="NAME")
 	 * then adds the name to the post as a person term
 	 */
-	public function save_post( $unused_post_id, $post )
+	public function save_post( $post_id, $post )
 	{
 		// check that this isn't an autosave
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
@@ -338,7 +323,7 @@ class GO_Quotes
 		}//end if
 
 		$this->is_save_post = TRUE;
-		$this->post_id = $post->ID;
+		$this->post_id = $post_id;
 
 		$content = $post->post_content;
 		do_shortcode( $content );
