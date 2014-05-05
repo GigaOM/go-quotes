@@ -91,7 +91,7 @@ class GO_Quotes
 	}// end admin_init
 
 	/**
-	 * Load the tinymce pluygin script
+	 * Load the tinymce plugin script
 	 */
 	public function mce_external_plugins( $plugins )
 	{
