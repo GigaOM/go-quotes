@@ -77,8 +77,6 @@ class GO_Quotes
 		return $this->script_config;
 	}// end script_config
 
-	/* TinyMCE shizzle */
-
 	public function custom_quicktags()
 	{
 
