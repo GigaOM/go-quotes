@@ -14,8 +14,7 @@ class GO_Quotes
 	 */
 	public function __construct()
 	{
-		add_action( 'admin_init', array( $this, 'admin_init' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+		add_action( 'admin_print_footer_scripts', array( $this, 'custom_quicktags' ) );
 		add_action( 'init', array( $this, 'init' ) );
 		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
 	}// end __construct
@@ -80,63 +79,20 @@ class GO_Quotes
 
 	/* TinyMCE shizzle */
 
-	/**
-	 * Check for the rich text editor before adding the filters for our custom buttons
-	 * NOTE: this won't work until we have button images
-	 */
-	public function admin_init()
+	public function custom_quicktags()
 	{
-		add_filter( 'mce_external_plugins', array( $this, 'mce_external_plugins' ) );
-		add_filter( 'mce_buttons', array( $this, 'mce_buttons' ) );
-	}// end admin_init
 
-	/**
-	 * Load the tinymce plugin script
-	 */
-	public function mce_external_plugins( $plugins )
-	{
-		$plugins['go-quotes'] = plugins_url( 'js/go-quotes-mce.js', __FILE__ );
-		return $plugins;
-	}// end mce_external_plugins
-
-	/**
-	 * Add our custom buttons to the tinymce button array
-	 */
-	public function mce_buttons( $buttons )
-	{
-		//remove the default blockquote button - we're going to replace it
-		unset( $buttons['b-quote'] );
-		array_push( $buttons, 'separator' );
-
-		foreach ( $this->config( 'quote_types' ) as $quote_type )
+		if ( wp_script_is( 'quicktags' ) )
 		{
-			array_push( $buttons, $quote_type );
-		}// end foreach
-
-		return $buttons;
-	}// end mce_buttons
-
-	/**
-	 * Load js to add quicktags buttons
-	 */
-	public function admin_enqueue_scripts( $hook )
-	{
-		//Bail if we're not on an edit page
-		if ( $hook != 'edit.php' )
-		{
-			return;
-		}// end if
-
-		wp_enqueue_script( 'edit_form_top', plugins_url( 'js/go-quotes-qt.js', __FILE__ ), array( 'quicktags' ), $this->script_config( 'version' ) );
-
-		wp_localize_script(
-			'go-quotes-qt',
-			'go_quote_types',
-			array(
-				'types' => $this->config( 'quote_types' ),
-			)
-		);
-	}// end admin_enqueue_scripts
+		?>
+		<script type="text/javascript">
+		QTags.addButton( 'qt-content-block', 'blockquote', '[blockquote person="" attribution=""]', '[/blockquote]', null, 'Blockquote' );
+		QTags.addButton( 'qt-content-pull', 'pullquote', '[pullquote person="" attribution=""]', '[/pullquote]', null, 'Pull quote' );
+		QTags.addButton( 'qt-content-quote', 'quote', '[quote person=""]', '[/quote]', null, 'Inline quote' );
+		</script>
+		<?php
+		}//end if
+	}//end custom_quicktags
 
 	/**
 	 * Render the block-level quotes.
