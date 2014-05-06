@@ -172,17 +172,15 @@ class GO_Quotes
 
 		$person = $attributes['person'] ? str_replace( ' ', '-', $attributes['person'] ) : FALSE;
 		$attribution = $attributes['attribution'] ? $attributes['attribution'] : FALSE;
-		if ( $person )
-		{
-			$cite_link = get_term_link( $attributes['person'], 'person' );
-		}//end if
+
+		/* Not going to bother escaping it here, since we're going to escape it 6 more times in this function...thanks VIP */
+		$cite_link = $person ? get_term_link( $attributes['person'], 'person' ) : '';
 
 		ob_start();
 		if ( 'pullquote' == $type || 'blockquote' == $type )
 		{
 			//set some defaults
 			$wrapped_content               = '<p class="content">' . esc_html( $content ) . '</p>';
-			$attribution_cite_link = ( $attribution ) ? '<a href="' . $cite_link . '">' . $attribution . '</a>' : '';
 			$attribution_start     = '<footer><cite>';
 			$attribution_end       = '</cite></footer>';
 			$wrapper_start         = '';
@@ -191,26 +189,25 @@ class GO_Quotes
 			switch ( $type )
 			{
 				case 'pullquote':
-					$quote_block_start     = '<aside class="pullquote" id="quote-' . ++$this->quote_id . '">';
+					$quote_block_start     = '<aside class="pullquote" id="quote-' . absint( ++$this->quote_id ) . '">';
 					$quote_block_end       = '</aside>';
 					$wrapper_start         = '<div class="boxed">';
 					$wrapper_end           = '</div>';
 					break;
 
 				case 'blockquote':
-					$quote_block_start     = '<blockquote id="quote-' . ++$this->quote_id . '">';
+					$quote_block_start     = '<blockquote id="quote-' . absint( ++$this->quote_id ) . '">';
 					$quote_block_end       = '</blockquote>';
 					break;
 
 				default:
-					$quote_block_start     = '<q id="quote-' . ++$this->quote_id;
-					$wrapped_content               = esc_html( $content );
-					$attribution_cite_link = ' cite="' . $cite_link . '"';
+					$quote_block_start     = '<q id="quote-' . absint( ++$this->quote_id );
+					$wrapped_content       = esc_html( $content );
 					$quote_block_end       = '</q>';
 					break;
 			}//end switch
 
-			echo  $quote_block_start;
+			echo $quote_block_start;
 
 			echo $wrapper_start;
 
@@ -226,7 +223,7 @@ class GO_Quotes
 					if ( ! is_wp_error( $cite_link ) )
 					{
 						?>
-						<a href='<?php echo $cite_link; ?>'>
+						<a href='<?php echo esc_url( $cite_link ); ?>'>
 						<?php
 					}// end if
 				}// end if
@@ -243,9 +240,8 @@ class GO_Quotes
 			echo $wrapper_end;
 
 			echo '<div class="social">';
-			//these are placeholder links until I get bsocial to play nice
-			echo '<a href="' . go_local_bsocial()->build_twitter_url( $post, get_permalink( $post->ID ), esc_html( $content ), 'quote', FALSE, '#quote-' . $this->quote_id ) . '" title="Share on Twitter" class="goicon icon-twitter-circled"></a>';
-			echo '<a href="' . go_local_bsocial()->build_facebook_url( $post, get_permalink( $post->ID ), FALSE, '#quote-' . $this->quote_id, esc_html( $content ) ) . '" title="Share on Facebook" class="goicon icon-facebook-circled"></a>';
+			echo '<a href="' . esc_url( go_local_bsocial()->build_twitter_url( $post, get_permalink( $post->ID ), esc_html( $content ), 'quote', FALSE, '#quote-' . $this->quote_id ) ). '" title="Share on Twitter" class="goicon icon-twitter-circled"></a>';
+			echo '<a href="' . esc_url( go_local_bsocial()->build_facebook_url( $post, get_permalink( $post->ID ), FALSE, '#quote-' . $this->quote_id, esc_html( $content ) ) ). '" title="Share on Facebook" class="goicon icon-facebook-circled"></a>';
 			echo '<a href="' . esc_url( $_SERVER['REQUEST_URI'] . '#quote-' . $this->quote_id ) . '" class="goicon icon-linkedin-circled"></a>';
 			echo '</div>';
 			echo $quote_block_end;
@@ -260,7 +256,7 @@ class GO_Quotes
 				//if we have a person term, wrap it in a cite link
 				if ( ! is_wp_error( $cite_link ) )
 				{
-					$quote_string .= ' cite="' . $cite_link . '"';
+					$quote_string .= ' cite="' . esc_url( $cite_link ) . '"';
 				}
 			}// end if
 
