@@ -17,6 +17,7 @@ class GO_Quotes
 		add_action( 'admin_print_footer_scripts', array( $this, 'custom_quicktags' ) );
 		add_action( 'init', array( $this, 'init' ) );
 		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
+		add_filter( 'quicktags_settings', array( $this, 'quicktag_settings' ), 10, 1 );
 	}// end __construct
 
 	/**
@@ -84,13 +85,26 @@ class GO_Quotes
 		{
 		?>
 		<script type="text/javascript">
-		QTags.addButton( 'qt-content-block', 'blockquote', '[blockquote person="" attribution=""]', '[/blockquote]', null, 'Blockquote' );
-		QTags.addButton( 'qt-content-pull', 'pullquote', '[pullquote person="" attribution=""]', '[/pullquote]', null, 'Pull quote' );
+		QTags.addButton( 'qt-content-block', 'blockquote', '[blockquote person="" attribution=""]', '[/blockquote]', 'q', 'Blockquote' );
+		QTags.addButton( 'qt-content-pull', 'pullquote', '[pullquote person="" attribution=""]', '[/pullquote]', 'p', 'Pull quote' );
 		QTags.addButton( 'qt-content-quote', 'quote', '[quote person=""]', '[/quote]', null, 'Inline quote' );
 		</script>
 		<?php
 		}//end if
 	}//end custom_quicktags
+
+	public function quicktag_settings( $qtInit )
+	{
+		//disable the block button, we're replacing it.
+		$buttons = explode( ',', $qtInit['buttons'] );
+		while ( ( $key = array_search( 'block', $buttons ) ) !== false )
+		{
+			unset( $buttons[ $key ] );
+		}//end while
+		$qtInit['buttons'] = implode( ',', $buttons );
+
+		return $qtInit;
+	}//end quicktag_settings
 
 	/**
 	 * Render the block-level quotes.
