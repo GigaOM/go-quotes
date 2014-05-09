@@ -117,12 +117,6 @@ class GO_Quotes
 	 */
 	public function render_quote( $type, $atts, $content )
 	{
-		//check if we're saving and add person terms
-		if ( isset( $atts[ 'person' ] ) && $this->is_save_post )
-		{
-			wp_set_post_terms( $this->post_id, $atts[ 'person' ], $this->config( 'taxonomy' ), TRUE );
-			return;
-		}//end if
 
 		//bail if no content
 		if ( is_null( $content ) || is_admin() )
@@ -137,6 +131,13 @@ class GO_Quotes
 				),
 			$atts
 		);
+
+		//check if we're saving and add person terms
+		if ( isset( $atts[ 'person' ] ) && $this->is_save_post )
+		{
+			wp_set_post_terms( $this->post_id, $atts[ 'person' ], $this->config( 'taxonomy' ), TRUE );
+			return;
+		}//end if
 
 		$person = $attributes['person'] ? str_replace( ' ', '-', $attributes['person'] ) : FALSE;
 		$attribution = $attributes['attribution'] ? $attributes['attribution'] : FALSE;
