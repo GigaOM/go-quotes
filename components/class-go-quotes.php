@@ -211,7 +211,7 @@ class GO_Quotes
 			echo '<div class="social">';
 			echo '<a href="' . esc_url( go_local_bsocial()->build_twitter_url( $post, get_permalink( $post->ID ), esc_html( $content ), 'quote', FALSE, '#quote-' . $this->quote_id ) ). '" title="Share on Twitter" class="goicon icon-twitter-circled"></a>';
 			echo '<a href="' . esc_url( go_local_bsocial()->build_facebook_url( $post, get_permalink( $post->ID ), FALSE, '#quote-' . $this->quote_id, esc_html( $content ) ) ). '" title="Share on Facebook" class="goicon icon-facebook-circled"></a>';
-			echo '<a href="' . esc_url( $_SERVER['REQUEST_URI'] . '#quote-' . $this->quote_id ) . '" class="goicon icon-linkedin-circled"></a>';
+			echo '<a href="' . esc_url( $_SERVER['REQUEST_URI'] . '#quote-' . $this->quote_id ) . '" class="goicon icon-link-circled"></a>';
 			echo '</div>';
 			echo $quote_block_end;
 		}//end if
