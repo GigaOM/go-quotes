@@ -119,7 +119,7 @@ class GO_Quotes
 	{
 
 		//bail if no content
-		if ( is_null( $content ) || is_admin() )
+		if ( is_null( $content ) )
 		{
 			return;
 		}// end if
