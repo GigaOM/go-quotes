@@ -80,7 +80,6 @@ class GO_Quotes
 
 	public function custom_quicktags()
 	{
-
 		if ( wp_script_is( 'quicktags' ) )
 		{
 		?>
@@ -117,7 +116,6 @@ class GO_Quotes
 	 */
 	public function render_quote( $type, $atts, $content )
 	{
-
 		//bail if no content
 		if ( is_null( $content ) )
 		{
