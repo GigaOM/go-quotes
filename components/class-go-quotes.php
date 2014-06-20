@@ -45,7 +45,7 @@ class GO_Quotes
 							'pullquote',
 							'quote',
 						),
-					'taxonomy'    => 'person',
+					'taxonomy'    => 'post_tag',
 				),
 				$this->slug
 			);

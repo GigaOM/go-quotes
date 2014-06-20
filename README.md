@@ -7,6 +7,7 @@ Requirements
 ------------
 * jQuery
 * [go-config](https://github.com/GigaOM/go-config)
+* go-local-bsocial
 
 Addresses the following tickets:
 --------------------------------
