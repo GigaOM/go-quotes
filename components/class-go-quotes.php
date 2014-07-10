@@ -246,7 +246,7 @@ class GO_Quotes
 	{
 		if ( is_feed() )
 		{
-			return '';
+			return;
 		}//end if
 
 		return $this->render_quote( 'pullquote', $atts, $content );
