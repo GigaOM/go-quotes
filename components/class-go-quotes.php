@@ -244,6 +244,11 @@ class GO_Quotes
 	 */
 	public function pullquote_shortcode( $atts, $content )
 	{
+		if ( is_feed() )
+		{
+			return '';
+		}//end if
+
 		return $this->render_quote( 'pullquote', $atts, $content );
 	}// end pullquote_shortcode
 
