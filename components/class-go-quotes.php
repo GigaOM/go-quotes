@@ -146,26 +146,8 @@ class GO_Quotes
 		ob_start();
 		if ( 'pullquote' == $type || 'blockquote' == $type )
 		{
-			/*
-			Allow both version of bold/italics, break, and underline.
-
-			Not adding it now, but if we want to add links, add this to the array:
-
-			'a' => array(
-				'href' => array(),
-				'title' => array()
-			),
-			 */
-			$allowed_html = array(
-				'b' => array(),
-				'br' => array(),
-				'em' => array(),
-				'i' => array(),
-				'strong' => array(),
-				'u' => array(),
-			);
 			//set some defaults
-			$wrapped_content               = '<p class="content">' . wp_kses( $content, $allowed_html) . '</p>';
+			$wrapped_content               = '<p class="content">' . wp_kses_post( $content ) . '</p>';
 			$attribution_start     = '<footer><cite>';
 			$attribution_end       = '</cite></footer>';
 			$wrapper_start         = '';
@@ -187,7 +169,7 @@ class GO_Quotes
 
 				default:
 					$quote_block_start     = '<q id="quote-' . absint( ++$this->quote_id );
-					$wrapped_content       = wp_kses( $content, $allowed_html);
+					$wrapped_content       = wp_kses_post( $content );
 					$quote_block_end       = '</q>';
 					break;
 			}//end switch
@@ -245,7 +227,7 @@ class GO_Quotes
 				}
 			}// end if
 
-			$quote_string .= ' id="quote-' . ++$this->quote_id . '">' . esc_html( $content ) . '</q>';
+			$quote_string .= ' id="quote-' . ++$this->quote_id . '">' . wp_kses_post( $content ) . '</q>';
 
 			echo $quote_string;
 		}//end else
