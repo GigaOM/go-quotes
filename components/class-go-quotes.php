@@ -187,7 +187,7 @@ class GO_Quotes
 
 				default:
 					$quote_block_start     = '<q id="quote-' . absint( ++$this->quote_id );
-					$wrapped_content       = esc_html( $content );
+					$wrapped_content       = wp_kses( $content, $allowed_html);
 					$quote_block_end       = '</q>';
 					break;
 			}//end switch
