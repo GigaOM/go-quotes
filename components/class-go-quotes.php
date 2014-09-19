@@ -147,7 +147,7 @@ class GO_Quotes
 		if ( 'pullquote' == $type || 'blockquote' == $type )
 		{
 			//set some defaults
-			$wrapped_content               = '<p class="content">' . esc_html( $content ) . '</p>';
+			$wrapped_content               = '<p class="content">' . wp_kses_post( $content ) . '</p>';
 			$attribution_start     = '<footer><cite>';
 			$attribution_end       = '</cite></footer>';
 			$wrapper_start         = '';
@@ -169,7 +169,7 @@ class GO_Quotes
 
 				default:
 					$quote_block_start     = '<q id="quote-' . absint( ++$this->quote_id );
-					$wrapped_content       = esc_html( $content );
+					$wrapped_content       = wp_kses_post( $content );
 					$quote_block_end       = '</q>';
 					break;
 			}//end switch
@@ -227,7 +227,7 @@ class GO_Quotes
 				}
 			}// end if
 
-			$quote_string .= ' id="quote-' . ++$this->quote_id . '">' . esc_html( $content ) . '</q>';
+			$quote_string .= ' id="quote-' . ++$this->quote_id . '">' . wp_kses_post( $content ) . '</q>';
 
 			echo $quote_string;
 		}//end else
