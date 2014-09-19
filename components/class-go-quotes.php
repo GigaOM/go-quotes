@@ -146,8 +146,26 @@ class GO_Quotes
 		ob_start();
 		if ( 'pullquote' == $type || 'blockquote' == $type )
 		{
+			/*
+			Allow both version of bold/italics, break, and underline.
+
+			Not adding it now, but if we want to add links, add this to the array:
+
+			'a' => array(
+				'href' => array(),
+				'title' => array()
+			),
+			 */
+			$allowed_html = array(
+				'b' => array(),
+				'br' => array(),
+				'em' => array(),
+				'i' => array(),
+				'strong' => array(),
+				'u' => array(),
+			);
 			//set some defaults
-			$wrapped_content               = '<p class="content">' . esc_html( $content ) . '</p>';
+			$wrapped_content               = '<p class="content">' . wp_kses( $content, $allowed_html) . '</p>';
 			$attribution_start     = '<footer><cite>';
 			$attribution_end       = '</cite></footer>';
 			$wrapper_start         = '';
