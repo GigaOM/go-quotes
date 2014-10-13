@@ -208,7 +208,8 @@ class GO_Quotes
 
 			echo '<div class="social">';
 
-			if ( function_exists( 'go_local_bsocial' ) ) {
+			if ( function_exists( 'go_local_bsocial' ) )
+			{
 				echo '<a href="' . esc_url( go_local_bsocial()->build_twitter_url( $post, get_permalink( $post->ID ), esc_html( $content ), 'quote', FALSE, '#quote-' . $this->quote_id ) ). '" title="Share on Twitter" class="goicon icon-twitter-circled"></a>';
 				echo '<a href="' . esc_url( go_local_bsocial()->build_facebook_url( $post, get_permalink( $post->ID ), FALSE, '#quote-' . $this->quote_id, esc_html( $content ) ) ). '" title="Share on Facebook" class="goicon icon-facebook-circled"></a>';
 			}//end if
