@@ -207,16 +207,14 @@ class GO_Quotes
 			echo $wrapper_end;
 
 
-			$quote_permalink = get_permalink( $post->ID );
-			$links = '';
-			$links = apply_filters( 'go_quotes_links', $links, $post->ID, $this->quote_id );
+			$quote_permalink = get_permalink( $post->ID ) . '#quote-' . $this->quote_id;
+			//permalink
+			$links = '<a href="' . esc_url( $quote_permalink ) . '" class="goicon icon-link-circled"></a>';
+			$links = apply_filters( 'go_quotes_links', $links, $post->ID, $quote_permalink, $this->quote_id );
 
-			if ( ! empty( $links ) )
-			{
-				echo '<div class="social">';
-				echo wp_kses_post( $links );
-				echo '</div>';
-			}//end if
+			echo '<div class="social">';
+			echo wp_kses_post( $links );
+			echo '</div>';
 
 			echo $quote_block_end;
 		}//end if
