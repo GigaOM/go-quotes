@@ -62,7 +62,6 @@ class GO_Quotes
 			),
 			'supports' => array(
 				'title',
-				'author',
 				'excerpt',
 			),
 			'public' => TRUE,
@@ -72,12 +71,7 @@ class GO_Quotes
 				'slug' => 'pull-quotes',
 				'with_front' => FALSE,
 			),
-			'taxonomies' => array(
-				'post_tag',
-				'company',
-				'technology',
-				'person',
-			),
+			'taxonomies' => array(),
 		);
 
 		register_post_type( $this->post_type_name, $post_type_config );

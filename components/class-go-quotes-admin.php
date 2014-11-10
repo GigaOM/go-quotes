@@ -2,20 +2,23 @@
 
 class GO_Quotes_Admin
 {
+	public $post_type_name = 'go-quotes-pullquote';
 
 	public function __construct()
 	{
-		add_action( 'init', array( $this, 'init' ), 11 );
 		add_action( 'go_waterfall_options_meta_box', array( $this, 'go_waterfall_options_meta_box' ) );
+		add_filter( 'go_guestpost_post_types', array( $this, 'go_guestpost_post_types' ) );
 		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
 	}// END __construct
 
 	/**
-	 * Functions and actions to run on init
+	 * hooked to the go_guestpost_post_types filter to add the guest post meta box
 	 */
-	public function init()
+	public function go_guestpost_post_types( $post_types )
 	{
-	}//end init
+		$post_types[] = $this->post_type_name;
+		return $post_types;
+	}//end go_guestpost_post_types
 
 	/**
 	 * Hooks to the save_post action and looks though the content for
@@ -178,12 +181,16 @@ class GO_Quotes_Admin
 		<h4 id="go-quotes-pullquotes">Featured Pull-quotes</h4>
 		<?php
 
+		include_once __DIR__ . '/class-go-quotes-pullquote-table.php';
+
+		$featured_table = new GO_Quotes_Pullquote_Table( $post, $query );
+		$featured_table->prepare_items();
+		$featured_table->display();
+
 		while ( $query->have_posts() )
 		{
 			$query->the_post();
 			echo $post->post_title . '<br>';
-			?>
-			<?php
 		}//end while
 
 		wp_reset_postdata();
