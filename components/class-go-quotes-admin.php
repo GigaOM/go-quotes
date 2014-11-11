@@ -163,7 +163,25 @@ class GO_Quotes_Admin
 				'attributes' => $match[1],
 				'quote' => $match[2],
 				'post' => NULL,
+				'person' => NULL,
+				'attribution' => NULL,
 			);
+
+			// grab the person from the pullquote attributes if there is one
+			preg_match( '#person="([^"]+)"#', $pullquote['attributes'], $matches );
+
+			if ( $matches[1] )
+			{
+				$pullquote['person'] = $matches[1];
+			}//end if
+
+			// grab the attribution from the pullquote attributes if there is one
+			preg_match( '#attribution="([^"]+)"#', $pullquote['attributes'], $matches );
+
+			if ( $matches[1] )
+			{
+				$pullquote['attribution'] = $matches[1];
+			}//end if
 
 			// grab the pullquote post id from the pullquote attributes if there is one
 			preg_match( '#id="([\d]+)#', $pullquote['attributes'], $matches );
@@ -226,6 +244,13 @@ class GO_Quotes_Admin
 		// create the pullquote object
 		$pullquote['id'] = wp_insert_post( $pullquote_data );
 
+		do_action( 'go_guestpost_save_guest_post_data', array(
+			'post_id' => $pullquote['id'],
+			'author_override' => $pullquote['person'] ? TRUE : FALSE,
+			'author_name' => $pullquote['person'] ?: '',
+			'author_url' => $pullquote['attribution'] ?: '',
+		) );
+
 		// let's remove any id from the shortcode so we can make sure the current one in there is accurate
 		$content = preg_replace( '#(\[pullquote[^\]]*?) id="[\d]+"([^\]]*\]' . preg_quote( $pullquote['quote'], '#' ) . '\[/pullquote\])#', '$1$2', $post->post_content );
 
@@ -258,5 +283,12 @@ class GO_Quotes_Admin
 		remove_action( 'save_post', array( $this, 'save_post' ) );
 		wp_update_post( $pullquote );
 		add_action( 'save_post', array( $this, 'save_post' ) );
+
+		do_action( 'go_guestpost_save_guest_post_data', array(
+			'post_id' => $pullquote['id'],
+			'author_override' => $pullquote['person'] ? TRUE : FALSE,
+			'author_name' => $pullquote['person'] ?: '',
+			'author_url' => $pullquote['attribution'] ?: '',
+		) );
 	}//end update_pullquote
 }//end class
