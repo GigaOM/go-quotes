@@ -337,6 +337,8 @@ class GO_Quotes
 		if (
 			! is_admin()
 			&& $query->is_main_query()
+			// @TODO: remove theme_preview when waterfall goes live
+			&& go_theme()->theme_preview()
 		)
 		{
 			$post_types = array_merge(
