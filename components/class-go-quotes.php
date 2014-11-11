@@ -19,6 +19,7 @@ class GO_Quotes
 		add_action( 'admin_print_footer_scripts', array( $this, 'custom_quicktags' ) );
 		add_action( 'init', array( $this, 'init' ) );
 		add_filter( 'quicktags_settings', array( $this, 'quicktag_settings' ), 10, 1 );
+		add_filter( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
 
 		if ( is_admin() )
 		{
@@ -327,6 +328,28 @@ class GO_Quotes
 	{
 		return $this->render_quote( 'quote', $atts, $content );
 	}// end quote_shortcode
+
+	/**
+	 * Include pullquotes in the post_types of the main query
+	 */
+	public function pre_get_posts( $query )
+	{
+		if (
+			! is_admin()
+			&& $query->is_main_query()
+		)
+		{
+			$post_types = array_merge(
+				(array) $query->query_vars['post_type'],
+				array( is_singular() && isset( $query->queried_object->post_type ) ? $query->queried_object->post_type : 'post' ),
+				array( $this->post_type_name )
+			);
+
+			$query->set( 'post_type', $post_types );
+		}// END if
+
+		return $query;
+	}// END pre_get_posts
 
 }// end class
 

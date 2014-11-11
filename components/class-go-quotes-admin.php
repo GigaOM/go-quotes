@@ -114,12 +114,6 @@ class GO_Quotes_Admin
 		$featured_table->prepare_items();
 		$featured_table->display();
 
-		while ( $query->have_posts() )
-		{
-			$query->the_post();
-			echo $post->post_title . '<br>';
-		}//end while
-
 		wp_reset_postdata();
 	}// end go_waterfall_options_meta_box
 
