@@ -8,8 +8,6 @@ var go_quotes_pullquote = {};
 			var $link = $( this );
 			var $row = $link.closest( 'tr' );
 
-			console.log( $link.attr( 'href' ) );
-
 			$row.block({
 				message: '<span>Please wait...</span>'
 			});
