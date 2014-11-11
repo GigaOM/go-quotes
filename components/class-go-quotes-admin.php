@@ -6,10 +6,39 @@ class GO_Quotes_Admin
 
 	public function __construct()
 	{
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'go_waterfall_options_meta_box', array( $this, 'go_waterfall_options_meta_box' ) );
 		add_filter( 'go_guestpost_post_types', array( $this, 'go_guestpost_post_types' ) );
 		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
 	}// END __construct
+
+	/**
+	 * hooked to the admin_enqueue_scripts
+	 */
+	public function admin_enqueue_scripts()
+	{
+		if ( ! function_exists( 'go_ui' ) )
+		{
+			return;
+		}//end if
+
+		go_ui();
+
+		$script_config = apply_filters( 'go_config', array( 'version' => 1 ), 'go-script-version' );
+
+		wp_register_script(
+			'go-quotes-pullquote',
+			plugins_url( 'js/lib/go-quotes-pullquote.js', __FILE__ ),
+			array(
+				'jquery',
+				'blockui',
+			),
+			$script_config['version'],
+			TRUE
+		);
+
+		wp_enqueue_script( 'go-quotes-pullquote' );
+	}//end admin_enqueue_scripts
 
 	/**
 	 * hooked to the go_guestpost_post_types filter to add the guest post meta box
@@ -143,8 +172,11 @@ class GO_Quotes_Admin
 			{
 				$pullquote['id'] = $matches[1];
 
-				// if the post for this quote doesn't exist, null the id
-				if ( ! ( $pullquote['post'] = get_post( $pullquote['id'] ) ) )
+				// if the post for this quote doesn't exist or the post is in the trash, null the id
+				if (
+					! ( $pullquote['post'] = get_post( $pullquote['id'] ) )
+					|| 'trash' === $pullquote['post']->post_status
+				)
 				{
 					$pullquote['id'] = NULL;
 				}//end if

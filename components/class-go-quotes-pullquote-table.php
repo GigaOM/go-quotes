@@ -36,6 +36,11 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 	 */
 	public function column_date( $item )
 	{
+		if ( 'draft' === $item->post_status )
+		{
+			return 'TBD';
+		}//end if
+
 		return esc_html( get_the_date() . ' ' . get_the_time() );
 	} // END column_default
 
@@ -83,7 +88,7 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 	{
 		$columns = array(
 			'pullquote' => 'Pull-quote',
-			'date'  => 'Date',
+			'date'  => 'Publish date',
 		);
 
 		return $columns;
