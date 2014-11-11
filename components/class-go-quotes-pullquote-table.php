@@ -5,6 +5,8 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 	public $user_can;
 	public $parent_post;
 	public $query;
+	public $content_pullquotes = array();
+	public $content_pullquote_ids = array();
 
 	/**
 	 * constructor!
@@ -12,6 +14,7 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 	public function __construct( $parent_post, $query )
 	{
 		$this->query = $query;
+		$this->parent_post = $parent_post;
 
 		//Set parent defaults
 		parent::__construct(
@@ -21,6 +24,9 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 				'ajax'     => FALSE,             //does this table support ajax?
 			)
 		);
+
+		$this->content_pullquotes = go_quotes()->admin()->find_pullquotes( $parent_post->post_content, $parent_post->ID );
+		$this->content_pullquote_ids = wp_list_pluck( $this->content_pullquotes, 'id' );
 	} // END __construct
 
 	/**
@@ -42,12 +48,10 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 	{
 		$edit_url    = admin_url( 'post.php?post=' . $item->ID . '&amp;action=edit' );
 		$trash_url   = get_delete_post_link( $item->ID );
-		$preview_url = home_url( '/?p=' . absint( $item->ID ) . '&amp;preview=true' );
 
 		$actions = array(
 			'post-edit' => sprintf( '<a href="%1$s">Edit</a>', esc_url( $edit_url ) ),
 			'post-trash' => sprintf( '<span class="delete"><a class="submitdelete" href="%1$s">Trash</a></span>', esc_url( $trash_url ) ),
-			'post-preview' => sprintf( '<a href="%1$s">Preview</a>', esc_url( $preview_url ) ),
 		);
 
 		$state = '';
@@ -56,11 +60,18 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 			$state = '- <span class="post-state">Draft</span>';
 		}//end if
 
+		$orphan = '';
+		if ( ! in_array( $item->ID, $this->content_pullquote_ids ) )
+		{
+			$orphan = '- <span class="post-state">This pull-quote is no longer in this post!</span>';
+		}//end if
+
 		return sprintf(
-			'<strong><a href="%1$s">%2$s</a></strong> %3$s %4$s',
+			'<strong><a href="%1$s">%2$s</a></strong> %3$s %4$s %5$s',
 			esc_url( $edit_url ),
 			get_the_title( $item->ID ),
 			$state,
+			$orphan,
 			$this->row_actions( $actions )
 		);
 	} // END column_pullquote
@@ -92,6 +103,14 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 		echo $this->single_row_columns( $post );
 		echo '</tr>';
 	} // END single_row
+
+	/**
+	 * We don't want to diplsay anything with the tablenav so we simply do nothing. We include this
+	 * because we don't want the defaults.
+	 */
+	protected function display_tablenav( $unused_which )
+	{
+	}//end display_tablenav
 
 	/**
 	 * prepares the comments for rendering

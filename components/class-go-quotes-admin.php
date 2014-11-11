@@ -70,90 +70,17 @@ class GO_Quotes_Admin
 		$this->is_save_post = FALSE;
 		$this->post_id = NULL;
 
-		if ( ! preg_match( '/\[pullquote[^\]]*]*\]/', $content ) )
+		$pullquotes = $this->find_pullquotes( $content, $post_id );
+
+		foreach ( $pullquotes as $pullquote )
 		{
-			return;
-		}//end if
-
-		preg_match_all( '#\[pullquote([^\]]*?)\]([^\[]*)\[/pullquote\]#', $content, $all_quote_matches, PREG_SET_ORDER );
-
-		foreach ( $all_quote_matches as $match )
-		{
-			$pullquote_shortcode = $match[0];
-			$pullquote_attributes = $match[1];
-			$pullquote_quote = $match[2];
-
-			// grab the pullquote post id from the pullquote attributes if there is one
-			preg_match( '#id="([\d]+)#', $pullquote_attributes, $matches );
-
-			$pullquote_post_id = NULL;
-			$pullquote = NULL;
-			$pullquote_meta = array();
-
-			// is there an ID associated with the pullquote?
-			if ( $matches[1] )
+			if ( ! $pullquote['id'] )
 			{
-				$pullquote_post_id = $matches[1];
-				if ( $pullquote = get_post( $pullquote_post_id ) )
-				{
-					$pullquote_meta = get_post_meta( $pullquote_post_id, 'go-quotes-pullquote', TRUE );
-
-					// if the post parent doesn't match the post
-					if ( $pullquote->post_parent != $post_id )
-					{
-						$pullquote = NULL;
-						$pullquote_post_id = NULL;
-					}//end if
-				}//end if
-				else
-				{
-					$pullquote_post_id = NULL;
-				}//end else
-			}//end if
-
-			$pullquote_data = array(
-				'post_content' => $pullquote_quote,
-				'post_title' => 75 <= sizeof( $pullquote_quote ) ? $pullquote_quote : substr( $pullquote_quote, 0, 72 ) . '…',
-				'post_type' => $this->post_type_name,
-				'post_parent' => $post_id,
-			);
-
-			if ( ! $pullquote_post_id )
-			{
-				// if we are in here, there's no ID set on the pullquote
-				$pullquote_data['post_excerpt'] = $pullquote_data['post_content'];
-
-				// create the pullquote object
-				$pullquote_post_id = wp_insert_post( $pullquote_data );
-
-				// let's remove any id from the shortcode so we can make sure the current one in there is accurate
-				$content = preg_replace( '#(\[pullquote[^\]]*?) id="[\d]+"([^\]]*\]' . preg_quote( $pullquote_quote, '#' ) . '\[/pullquote\])#', '$1$2', $content );
-
-				// add the id to the shortcode
-				$content = preg_replace( '#(\[pullquote[^\]]*?)(\]' . preg_quote( $pullquote_quote, '#' ) . '\[/pullquote\])#', '$1 id="' . $pullquote_post_id . '"$2', $content );
-
-				// update the content
-				remove_action( 'save_post', array( $this, 'save_post' ) );
-				wp_update_post( array(
-					'ID' => $post_id,
-					'post_content' => $content,
-				) );
-				add_action( 'save_post', array( $this, 'save_post' ) );
+				$this->create_pullquote( $pullquote, $post );
 			}//end if
 			else
 			{
-				// the pullquote already has a post id
-				$pullquote_data['ID'] = $pullquote_post_id;
-
-				// if the pullquote's excerpt is unmolested, we are free to continue to update it
-				if ( $pullquote->post_excerpt == $pullquote->post_content )
-				{
-					$pullquote_data['post_excerpt'] = $pullquote_data['post_content'];
-				}//end if
-
-				remove_action( 'save_post', array( $this, 'save_post' ) );
-				wp_update_post( $pullquote );
-				add_action( 'save_post', array( $this, 'save_post' ) );
+				$this->update_pullquote( $pullquote );
 			}//end else
 		}//end foreach
 	}// end save_post
@@ -195,4 +122,115 @@ class GO_Quotes_Admin
 
 		wp_reset_postdata();
 	}// end go_waterfall_options_meta_box
+
+	/**
+	 * find all pullquotes in the contents of provided text
+	 */
+	public function find_pullquotes( $content, $post_id = NULL )
+	{
+		preg_match_all( '#\[pullquote([^\]]*?)\]([^\[]*)\[/pullquote\]#', $content, $all_quote_matches, PREG_SET_ORDER );
+
+		$pullquotes = array();
+
+		foreach ( $all_quote_matches as $match )
+		{
+			$pullquote = array(
+				'id' => NULL,
+				'shortcode' => $match[0],
+				'attributes' => $match[1],
+				'quote' => $match[2],
+				'post' => NULL,
+			);
+
+			// grab the pullquote post id from the pullquote attributes if there is one
+			preg_match( '#id="([\d]+)#', $pullquote['attributes'], $matches );
+
+			if ( $matches[1] )
+			{
+				$pullquote['id'] = $matches[1];
+
+				// if the post for this quote doesn't exist, null the id
+				if ( ! ( $pullquote['post'] = get_post( $pullquote['id'] ) ) )
+				{
+					$pullquote['id'] = NULL;
+				}//end if
+
+				// if the post parent doesn't match the post, null the id
+				if (
+					$post_id
+					&& $pullquote['id']
+					&& $pullquote['post']->post_parent != $post_id
+				)
+				{
+					$pullquote['id'] = NULL;
+				}//end if
+			}//end if
+
+			$pullquotes[] = $pullquote;
+		}//end foreach
+
+		return $pullquotes;
+	}//end find_pullquotes
+
+	/**
+	 * sets up the pullquote data
+	 */
+	private function setup_pullquote_post_data( $pullquote, $post_id )
+	{
+		$pullquote_data = array(
+			'post_content' => $pullquote['quote'],
+			'post_title' => 75 <= sizeof( $pullquote['quote'] ) ? $pullquote['quote'] : substr( $pullquote['quote'], 0, 72 ) . '…',
+			'post_type' => $this->post_type_name,
+			'post_parent' => $post_id,
+		);
+
+		return $pullquote_data;
+	}//end setup_pullquote_post_data
+
+	/**
+	 * creates a pullquote post object
+	 */
+	private function create_pullquote( $pullquote, $post )
+	{
+		$pullquote_data = $this->setup_pullquote_post_data( $pullquote, $post->ID );
+
+		// if we are in here, there's no ID set on the pullquote
+		$pullquote_data['post_excerpt'] = $pullquote_data['post_content'];
+
+		// create the pullquote object
+		$pullquote['id'] = wp_insert_post( $pullquote_data );
+
+		// let's remove any id from the shortcode so we can make sure the current one in there is accurate
+		$content = preg_replace( '#(\[pullquote[^\]]*?) id="[\d]+"([^\]]*\]' . preg_quote( $pullquote['quote'], '#' ) . '\[/pullquote\])#', '$1$2', $post->post_content );
+
+		// add the id to the shortcode
+		$content = preg_replace( '#(\[pullquote[^\]]*?)(\]' . preg_quote( $pullquote['quote'], '#' ) . '\[/pullquote\])#', '$1 id="' . $pullquote['id'] . '"$2', $content );
+
+		// update the content
+		remove_action( 'save_post', array( $this, 'save_post' ) );
+		wp_update_post( array(
+			'ID' => $post->ID,
+			'post_content' => $content,
+		) );
+		add_action( 'save_post', array( $this, 'save_post' ) );
+	}//end create_pullquote
+
+	/**
+	 * update a pullquote post object
+	 */
+	private function update_pullquote( $pullquote )
+	{
+		// the pullquote already has a post id
+		$pullquote_data['ID'] = $pullquote['id'];
+
+		// if the pullquote's excerpt is unmolested, we are free to continue to update it
+		if ( $pullquote['post']->post_excerpt == $pullquote['post']->post_content )
+		{
+			$pullquote_data['post_excerpt'] = $pullquote_data['post_content'];
+		}//end if
+
+		remove_action( 'save_post', array( $this, 'save_post' ) );
+		wp_update_post( $pullquote );
+		add_action( 'save_post', array( $this, 'save_post' ) );
+	}//end update_pullquote
 }//end class
