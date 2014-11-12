@@ -8,6 +8,7 @@ class GO_Quotes_Admin
 	{
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'go_waterfall_options_meta_box', array( $this, 'go_waterfall_options_meta_box' ) );
+		add_action( 'post_submitbox_start', array( $this, 'post_submitbox_start' ) );
 		add_filter( 'go_guestpost_post_types', array( $this, 'go_guestpost_post_types' ) );
 		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
 	}// END __construct
@@ -49,6 +50,11 @@ class GO_Quotes_Admin
 		return $post_types;
 	}//end go_guestpost_post_types
 
+	public function post_submitbox_start()
+	{
+		echo wp_nonce_field( 'go-quotes-featured-pullquote', '_go_quotes_featured_save' );
+	}//end post_submitbox_start
+
 	/**
 	 * Hooks to the save_post action and looks though the content for
 	 * person attributes ( specifically person="NAME")
@@ -76,11 +82,16 @@ class GO_Quotes_Admin
 		}// end if
 
 		// Check the nonce
-		// @TODO: add a nonce
-		//if ( ! wp_verify_nonce( $_POST[ $this->post_type_name . '-save-post' ], plugin_basename( __FILE__ ) ) )
-		//{
-			//return;
-		//}// end if
+		if ( empty( $_POST[ '_go_quotes_featured_save' ] ) || ! wp_verify_nonce( $_POST[ '_go_quotes_featured_save' ], 'go-quotes-featured-pullquote' ) )
+		{
+			return;
+		}// end if
+
+		$whitelisted_post_types = array( 'post' );
+		if ( ! in_array( $post->post_type, $whitelisted_post_types ) )
+		{
+			return;
+		}//end if
 
 		// Check the permissions
 		if ( ! current_user_can( 'edit_post', $post->ID  ) )
@@ -132,7 +143,6 @@ class GO_Quotes_Admin
 		{
 			return;
 		}//end if
-
 		?>
 		<h4 id="go-quotes-pullquotes">Featured Pull-quotes</h4>
 		<?php
