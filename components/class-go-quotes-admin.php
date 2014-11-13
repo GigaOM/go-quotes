@@ -11,6 +11,7 @@ class GO_Quotes_Admin
 		add_action( 'post_submitbox_start', array( $this, 'post_submitbox_start' ) );
 		add_filter( 'go_guestpost_post_types', array( $this, 'go_guestpost_post_types' ) );
 		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
+		add_filter( 'go_waterfall_options_post_types', array( $this, 'go_waterfall_options_post_types' ) );
 	}// END __construct
 
 	/**
@@ -54,6 +55,16 @@ class GO_Quotes_Admin
 	{
 		echo wp_nonce_field( 'go-quotes-featured-pullquote', '_go_quotes_featured_save' );
 	}//end post_submitbox_start
+
+	/**
+	 * hooked to go_waterfall_options_post_types to add support for waterfall settings on go-quotes
+	 */
+	public function go_waterfall_options_post_types( $post_types )
+	{
+		$post_types[] = $this->post_type_name;
+
+		return $post_types;
+	}//end go_waterfall_options_post_types
 
 	/**
 	 * Hooks to the save_post action and looks though the content for
