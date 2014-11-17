@@ -58,15 +58,15 @@ class GO_Quotes
 
 		$post_type_config = array(
 			'labels' => array(
-				'name' => 'Featured Pull-quotes',
-				'singular_name' => 'Featured Pull-quote',
+				'name' => 'Pull-quotes',
+				'singular_name' => 'Pull-quote',
 			),
 			'supports' => array(
 				'title',
 				'excerpt',
 			),
 			'public' => TRUE,
-			'show_in_menu' => FALSE,
+			'show_in_menu' => TRUE,
 			'has_archive' => TRUE,
 			'rewrite' => array(
 				'slug' => 'pull-quotes',
