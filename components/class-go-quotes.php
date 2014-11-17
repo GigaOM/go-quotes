@@ -8,6 +8,8 @@ class GO_Quotes
 	public $post_id      = NULL;
 	public $quote_id     = 0;
 	public $slug         = 'go-quotes';
+	public $post_type_name = 'go-quotes-pullquote';
+	public $admin;
 
 	/**
 	 * Initialize the plugin and register hooks.
@@ -16,8 +18,13 @@ class GO_Quotes
 	{
 		add_action( 'admin_print_footer_scripts', array( $this, 'custom_quicktags' ) );
 		add_action( 'init', array( $this, 'init' ) );
-		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
 		add_filter( 'quicktags_settings', array( $this, 'quicktag_settings' ), 10, 1 );
+		add_filter( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
+
+		if ( is_admin() )
+		{
+			$this->admin();
+		}//end if
 	}// end __construct
 
 	/**
@@ -28,7 +35,48 @@ class GO_Quotes
 		add_shortcode( 'pullquote', array( $this, 'pullquote_shortcode' ) );
 		add_shortcode( 'quote', array( $this, 'quote_shortcode' ) );
 		add_shortcode( 'blockquote', array( $this, 'blockquote_shortcode' ) );
-	}
+		$this->register_post_type();
+	}//end init
+
+	public function admin()
+	{
+		if ( ! $this->admin )
+		{
+			require_once __DIR__ . '/class-go-quotes-admin.php';
+			$this->admin = new GO_Quotes_Admin;
+		}//end if
+
+		return $this->admin;
+	}//end admin
+
+	/**
+	 * Register the featured comment post_type
+	 */
+	public function register_post_type()
+	{
+		$taxonomies = array();
+
+		$post_type_config = array(
+			'labels' => array(
+				'name' => 'Featured Pull-quotes',
+				'singular_name' => 'Featured Pull-quote',
+			),
+			'supports' => array(
+				'title',
+				'excerpt',
+			),
+			'public' => TRUE,
+			'show_in_menu' => FALSE,
+			'has_archive' => TRUE,
+			'rewrite' => array(
+				'slug' => 'pull-quotes',
+				'with_front' => FALSE,
+			),
+			'taxonomies' => array(),
+		);
+
+		register_post_type( $this->post_type_name, $post_type_config );
+	}// END register_post_type
 
 	/**
 	 *	Singleton for config data
@@ -58,7 +106,6 @@ class GO_Quotes
 
 		return $this->config;
 	}// end config
-
 
 	/**
 	 * lazy load the script config
@@ -283,27 +330,29 @@ class GO_Quotes
 	}// end quote_shortcode
 
 	/**
-	 * Hooks to the save_post action and looks though the content for
-	 * person attributes ( specifically person="NAME")
-	 * then adds the name to the post as a person term
+	 * Include pullquotes in the post_types of the main query
 	 */
-	public function save_post( $post_id, $post )
+	public function pre_get_posts( $query )
 	{
-		// check that this isn't an autosave
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+		if (
+			! is_admin()
+			&& $query->is_main_query()
+			// @TODO: remove theme_preview when waterfall goes live
+			&& go_theme()->theme_preview()
+		)
 		{
-			return;
-		}//end if
+			$post_types = array_merge(
+				(array) $query->query_vars['post_type'],
+				array( is_singular() && isset( $query->queried_object->post_type ) ? $query->queried_object->post_type : 'post' ),
+				array( $this->post_type_name )
+			);
 
-		$this->is_save_post = TRUE;
-		$this->post_id = $post_id;
+			$query->set( 'post_type', $post_types );
+		}// END if
 
-		$content = $post->post_content;
-		do_shortcode( $content );
+		return $query;
+	}// END pre_get_posts
 
-		$this->is_save_post = FALSE;
-		$this->post_id = NULL;
-	}// end save_post
 }// end class
 
 
