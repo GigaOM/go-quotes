@@ -71,7 +71,7 @@ class GO_Quotes_Admin
 			unset( $columns['syndication'] );
 		}//end if
 
-		$offset = array_search( 'title', array_keys( $columns ) );
+		$offset = array_search( 'date', array_keys( $columns ) );
 		$offset++;
 
 		$columns = array_merge(
@@ -100,10 +100,10 @@ class GO_Quotes_Admin
 
 		?>
 		<p>
-			<a href="<?php echo get_edit_post_link( $parent->ID ); ?>"><?php echo get_the_title( $parent->ID ); ?></a>
+			<a href="<?php echo esc_url( get_edit_post_link( $parent->ID ) ); ?>"><?php echo esc_html( get_the_title( $parent->ID ) ); ?></a>
 		</p>
 		<div class="publish-date">
-			<strong>Publish date</strong>: <?php echo esc_html( get_the_date( $date_format, $parent->ID ) ); ?>
+			<strong>Article publish date</strong>: <?php echo esc_html( get_the_date( $date_format, $parent->ID ) ); ?>
 			<?php echo esc_html( get_the_time( 'h:i a', $parent->ID ) ); ?>
 		</div>
 		<?php
