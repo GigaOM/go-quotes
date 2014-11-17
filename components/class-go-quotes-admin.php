@@ -9,10 +9,29 @@ class GO_Quotes_Admin
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'go_waterfall_options_meta_box', array( $this, 'go_waterfall_options_meta_box' ) );
 		add_action( 'post_submitbox_start', array( $this, 'post_submitbox_start' ) );
+
+		add_action( 'current_screen', array( $this, 'current_screen' ) );
+
 		add_filter( 'go_guestpost_post_types', array( $this, 'go_guestpost_post_types' ) );
 		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
 		add_filter( 'go_waterfall_options_post_types', array( $this, 'go_waterfall_options_post_types' ) );
 	}// END __construct
+
+	public function current_screen( $screen )
+	{
+		if ( ! $screen )
+		{
+			return;
+		}//end if
+
+		if ( 'edit-go-quotes-pullquote' != $screen->id )
+		{
+			return;
+		}//end if
+
+		add_action( 'manage_posts_custom_column', array( $this, 'manage_posts_custom_column' ), 10, 2 );
+		add_filter( 'manage_posts_columns', array( $this, 'manage_posts_columns' ) );
+	}//end current_screen
 
 	/**
 	 * hooked to the admin_enqueue_scripts
@@ -41,6 +60,54 @@ class GO_Quotes_Admin
 
 		wp_enqueue_script( 'go-quotes-pullquote' );
 	}//end admin_enqueue_scripts
+
+	/**
+	 * hooked to manage_posts_columns to add an article column
+	 */
+	public function manage_posts_columns( $columns )
+	{
+		if ( ! empty( $columns['syndication'] ) )
+		{
+			unset( $columns['syndication'] );
+		}//end if
+
+		$offset = array_search( 'title', array_keys( $columns ) );
+		$offset++;
+
+		$columns = array_merge(
+			array_slice( $columns, 0, $offset ),
+			array( 'article' => 'Article' ),
+			array_slice( $columns, $offset, NULL )
+		);
+
+		return $columns;
+	}//end manage_posts_columns
+
+	/**
+	 * hooked to manage_posts_custom_column to add an article column
+	 */
+	public function manage_posts_custom_column( $column, $post_id )
+	{
+		if ( 'article' != $column )
+		{
+			return;
+		}//end if
+
+		$quote_post = get_post( $post_id );
+		$parent = get_post( $quote_post->post_parent );
+
+		$date_format = get_option( 'date_format' );
+
+		?>
+		<p>
+			<a href="<?php echo get_edit_post_link( $parent->ID ); ?>"><?php echo get_the_title( $parent->ID ); ?></a>
+		</p>
+		<div class="publish-date">
+			<strong>Publish date</strong>: <?php echo esc_html( get_the_date( $date_format, $parent->ID ) ); ?>
+			<?php echo esc_html( get_the_time( 'h:i a', $parent->ID ) ); ?>
+		</div>
+		<?php
+	}//end manage_posts_custom_column
 
 	/**
 	 * hooked to the go_guestpost_post_types filter to add the guest post meta box
