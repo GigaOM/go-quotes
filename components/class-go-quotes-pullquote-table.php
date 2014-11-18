@@ -5,7 +5,6 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 	public $user_can;
 	public $parent_post;
 	public $query;
-	public $content_pullquotes = array();
 	public $content_pullquote_ids = array();
 
 	/**
@@ -25,8 +24,8 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 			)
 		);
 
-		$this->content_pullquotes = go_quotes()->admin()->find_pullquotes( $parent_post->post_content, $parent_post->ID );
-		$this->content_pullquote_ids = wp_list_pluck( $this->content_pullquotes, 'id' );
+		$content_pullquotes = go_quotes()->admin()->find_pullquotes( $parent_post->post_content, $parent_post->ID );
+		$this->content_pullquote_ids = wp_list_pluck( $content_pullquotes, 'id' );
 	} // END __construct
 
 	/**
@@ -42,7 +41,7 @@ class GO_Quotes_Pullquote_Table extends WP_List_Table
 		}//end if
 
 		return esc_html( get_the_date() . ' ' . get_the_time() );
-	} // END column_default
+	} // END column_date
 
 	/**
 	 * Custom column to output info on the pullquote
