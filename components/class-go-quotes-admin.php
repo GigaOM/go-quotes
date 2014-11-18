@@ -190,17 +190,37 @@ class GO_Quotes_Admin
 
 		$pullquotes = $this->find_pullquotes( $content, $post_id );
 
+		$update_post_content = FALSE;
+		$original_post_content = $post->post_content;
+
 		foreach ( $pullquotes as $pullquote )
 		{
 			if ( ! $pullquote['id'] )
 			{
-				$this->create_pullquote( $pullquote, $post );
+				$post->post_content = $this->create_pullquote( $pullquote, $post );
+
+				if ( $post->post_content != $original_post_content )
+				{
+					$update_post_content = TRUE;
+				}//end if
 			}//end if
 			else
 			{
 				$this->update_pullquote( $pullquote );
 			}//end else
 		}//end foreach
+
+		// if we updated the content with a new ID for a pullquote, let's update the post
+		if ( $update_post_content )
+		{
+			// update the content
+			remove_action( 'save_post', array( $this, 'save_post' ) );
+			wp_update_post( array(
+				'ID' => $post->ID,
+				'post_content' => $post->post_content,
+			) );
+			add_action( 'save_post', array( $this, 'save_post' ) );
+		}//end if
 	}// end save_post
 
 	/**
@@ -311,7 +331,7 @@ class GO_Quotes_Admin
 	{
 		$pullquote_data = array(
 			'post_content' => $pullquote['quote'],
-			'post_title' => 75 <= sizeof( $pullquote['quote'] ) ? $pullquote['quote'] : substr( $pullquote['quote'], 0, 72 ) . '…',
+			'post_title' => 75 <= count( $pullquote['quote'] ) ? $pullquote['quote'] : substr( $pullquote['quote'], 0, 72 ) . '…',
 			'post_type' => $this->post_type_name,
 			'post_parent' => $post_id,
 		);
@@ -338,13 +358,7 @@ class GO_Quotes_Admin
 		// add the id to the shortcode
 		$content = preg_replace( '#(\[pullquote[^\]]*?)(\]' . preg_quote( $pullquote['quote'], '#' ) . '\[/pullquote\])#', '$1 id="' . $pullquote['id'] . '"$2', $content );
 
-		// update the content
-		remove_action( 'save_post', array( $this, 'save_post' ) );
-		wp_update_post( array(
-			'ID' => $post->ID,
-			'post_content' => $content,
-		) );
-		add_action( 'save_post', array( $this, 'save_post' ) );
+		return $content;
 	}//end create_pullquote
 
 	/**
