@@ -180,9 +180,7 @@ class GO_Quotes_Admin
 		$this->is_save_post = TRUE;
 		$this->post_id = $post_id;
 
-		$post = get_post( $post_id );
-
-		$content = $post->post_content;
+		$original_post_content = $content = $_POST['post_content'];
 		do_shortcode( $content );
 
 		$this->is_save_post = FALSE;
@@ -191,15 +189,14 @@ class GO_Quotes_Admin
 		$pullquotes = $this->find_pullquotes( $content, $post_id );
 
 		$update_post_content = FALSE;
-		$original_post_content = $post->post_content;
 
 		foreach ( $pullquotes as $pullquote )
 		{
 			if ( ! $pullquote['id'] )
 			{
-				$post->post_content = $this->create_pullquote( $pullquote, $post );
+				$content = $this->create_pullquote( $pullquote, $post );
 
-				if ( $post->post_content != $original_post_content )
+				if ( $content != $original_post_content )
 				{
 					$update_post_content = TRUE;
 				}//end if
@@ -217,7 +214,7 @@ class GO_Quotes_Admin
 			remove_action( 'save_post', array( $this, 'save_post' ) );
 			wp_update_post( array(
 				'ID' => $post->ID,
-				'post_content' => $post->post_content,
+				'post_content' => $content,
 			) );
 			add_action( 'save_post', array( $this, 'save_post' ) );
 		}//end if
