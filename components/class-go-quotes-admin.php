@@ -256,7 +256,7 @@ class GO_Quotes_Admin
 	 */
 	public function find_pullquotes( $content, $post_id = NULL )
 	{
-		preg_match_all( '#\[pullquote([^\]]*?)\]([^\[]*)\[/pullquote\]#', $content, $all_quote_matches, PREG_SET_ORDER );
+		preg_match_all( '#\[pullquote([^\]]*?)\]([^\[]*)\[/pullquote\]#', stripslashes( $content ), $all_quote_matches, PREG_SET_ORDER );
 
 		$pullquotes = array();
 
@@ -289,7 +289,7 @@ class GO_Quotes_Admin
 			}//end if
 
 			// grab the pullquote post id from the pullquote attributes if there is one
-			preg_match( '#id="([\d]+)#', $pullquote['attributes'], $matches );
+			preg_match( '#id="([\d]+)"#', $pullquote['attributes'], $matches );
 
 			if ( $matches[1] )
 			{
