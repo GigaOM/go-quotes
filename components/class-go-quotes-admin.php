@@ -194,7 +194,7 @@ class GO_Quotes_Admin
 		{
 			if ( ! $pullquote['id'] )
 			{
-				$content = $this->create_pullquote( $pullquote, $post );
+				$content = $this->create_pullquote( $pullquote, $post, $content );
 
 				if ( $content != $original_post_content )
 				{
@@ -270,6 +270,7 @@ class GO_Quotes_Admin
 				'post' => NULL,
 				'person' => NULL,
 				'attribution' => NULL,
+				'content' => NULL,
 			);
 
 			// grab the person from the pullquote attributes if there is one
@@ -328,6 +329,7 @@ class GO_Quotes_Admin
 	{
 		$pullquote_data = array(
 			'post_content' => $pullquote['quote'],
+			'post_excerpt' => $pullquote['quote'],
 			'post_title' => 75 <= count( $pullquote['quote'] ) ? $pullquote['quote'] : substr( $pullquote['quote'], 0, 72 ) . '…',
 			'post_type' => $this->post_type_name,
 			'post_parent' => $post_id,
@@ -339,7 +341,7 @@ class GO_Quotes_Admin
 	/**
 	 * creates a pullquote post object
 	 */
-	private function create_pullquote( $pullquote, $post )
+	private function create_pullquote( $pullquote, $post, $content )
 	{
 		$pullquote_data = $this->setup_pullquote_post_data( $pullquote, $post->ID );
 
@@ -349,11 +351,15 @@ class GO_Quotes_Admin
 		// create the pullquote object
 		$pullquote['id'] = wp_insert_post( $pullquote_data );
 
+		$content = stripslashes( $content );
+
 		// let's remove any id from the shortcode so we can make sure the current one in there is accurate
-		$content = preg_replace( '#(\[pullquote[^\]]*?) id="[\d]+"([^\]]*\]' . preg_quote( $pullquote['quote'], '#' ) . '\[/pullquote\])#', '$1$2', $post->post_content );
+		$content = preg_replace( '#(\[pullquote[^\]]*?) id="[\d]+"([^\]]*\]' . preg_quote( $pullquote['quote'], '#' ) . '\[/pullquote\])#', '$1$2', $content );
 
 		// add the id to the shortcode
 		$content = preg_replace( '#(\[pullquote[^\]]*?)(\]' . preg_quote( $pullquote['quote'], '#' ) . '\[/pullquote\])#', '$1 id="' . $pullquote['id'] . '"$2', $content );
+
+		$content = addslashes( $content );
 
 		return $content;
 	}//end create_pullquote
@@ -363,17 +369,20 @@ class GO_Quotes_Admin
 	 */
 	private function update_pullquote( $pullquote )
 	{
+		$pullquote_data = array();
+
 		// the pullquote already has a post id
 		$pullquote_data['ID'] = $pullquote['id'];
+		$pullquote_data['post_title'] = 75 <= count( $pullquote['quote'] ) ? $pullquote['quote'] : substr( $pullquote['quote'], 0, 72 ) . '…';
 
 		// if the pullquote's excerpt is unmolested, we are free to continue to update it
 		if ( $pullquote['post']->post_excerpt == $pullquote['post']->post_content )
 		{
-			$pullquote_data['post_excerpt'] = $pullquote_data['post_content'];
+			$pullquote_data['post_excerpt'] = $pullquote['quote'];
 		}//end if
 
 		remove_action( 'save_post', array( $this, 'save_post' ) );
-		wp_update_post( $pullquote );
+		wp_update_post( $pullquote_data );
 		add_action( 'save_post', array( $this, 'save_post' ) );
 	}//end update_pullquote
 }//end class
