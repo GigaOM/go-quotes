@@ -20,6 +20,7 @@ class GO_Quotes
 		add_action( 'init', array( $this, 'init' ) );
 		add_filter( 'quicktags_settings', array( $this, 'quicktag_settings' ), 10, 1 );
 		add_filter( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
+		add_filter( 'post_type_link', array( $this, 'post_type_link' ), 11, 2 );
 
 		if ( is_admin() )
 		{
@@ -352,6 +353,20 @@ class GO_Quotes
 
 		return $query;
 	}// END pre_get_posts
+
+
+	/**
+	 * Return the link to the original post for pullquote posts
+	 */
+	public function post_type_link( $permalink, $post )
+	{
+		if ( $post->post_type == $this->post_type_name )
+		{
+			return get_permalink( $post->post_parent );
+		}//end if
+
+		return $permalink;
+	}//end post_type_link
 
 }// end class
 
