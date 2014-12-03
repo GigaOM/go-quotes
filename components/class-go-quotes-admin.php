@@ -351,6 +351,8 @@ class GO_Quotes_Admin
 		// create the pullquote object
 		$pullquote['id'] = wp_insert_post( $pullquote_data );
 
+		$this->update_attribution( $pullquote );
+
 		$content = stripslashes( $content );
 
 		// let's remove any id from the shortcode so we can make sure the current one in there is accurate
@@ -384,5 +386,21 @@ class GO_Quotes_Admin
 		remove_action( 'save_post', array( $this, 'save_post' ) );
 		wp_update_post( $pullquote_data );
 		add_action( 'save_post', array( $this, 'save_post' ) );
+
+		$this->update_attribution( $pullquote );
 	}//end update_pullquote
+
+	/**
+	 * updates a pullquote's attribution info
+	 */
+	private function update_attribution( $pullquote )
+	{
+		$pullquote['person'] = empty( $pullquote['person'] ) ? '' : sanitize_text_field( $pullquote['person'] );
+		$pullquote['attribution'] = empty( $pullquote['attribution'] ) ? '' : sanitize_text_field( $pullquote['attribution'] );
+
+		update_post_meta( $pullquote['id'], 'go-quotes', array(
+			'attribution' => $pullquote['attribution'],
+			'person' => $pullquote['person'],
+		) );
+	}//end update_attribution
 }//end class
