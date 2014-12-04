@@ -362,7 +362,12 @@ class GO_Quotes
 	{
 		if ( $post->post_type == $this->post_type_name )
 		{
-			return get_permalink( $post->post_parent );
+			//avoid recursion
+			remove_filter( 'post_type_link', array( $this, 'post_type_link' ), 11, 2 );
+
+			$permalink = get_permalink( $post->post_parent );
+
+			add_filter( 'post_type_link', array( $this, 'post_type_link' ), 11, 2 );
 		}//end if
 
 		return $permalink;
