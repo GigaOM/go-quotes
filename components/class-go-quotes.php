@@ -360,15 +360,15 @@ class GO_Quotes
 	 */
 	public function post_type_link( $permalink, $post )
 	{
-		//avoid recursion
-		remove_filter( 'post_type_link', array( $this, 'post_type_link' ), 11, 2 );
-
 		if ( $post->post_type == $this->post_type_name )
 		{
-			return get_permalink( $post->post_parent );
-		}//end if
+			//avoid recursion
+			remove_filter( 'post_type_link', array( $this, 'post_type_link' ), 11, 2 );
 
-		add_filter( 'post_type_link', array( $this, 'post_type_link' ), 11, 2 );
+			$permalink = get_permalink( $post->post_parent );
+
+			add_filter( 'post_type_link', array( $this, 'post_type_link' ), 11, 2 );
+		}//end if
 
 		return $permalink;
 	}//end post_type_link
