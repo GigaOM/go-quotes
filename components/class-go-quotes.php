@@ -21,6 +21,7 @@ class GO_Quotes
 		add_filter( 'quicktags_settings', array( $this, 'quicktag_settings' ), 10, 1 );
 		add_filter( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
 		add_filter( 'post_type_link', array( $this, 'post_type_link' ), 11, 2 );
+		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
 
 		if ( is_admin() )
 		{
@@ -372,7 +373,25 @@ class GO_Quotes
 
 		return $permalink;
 	}//end post_type_link
-
+	/**
+	 * Hooks to the save_post action and looks though the content for
+	 * person attributes ( specifically person="NAME")
+	 * then adds the name to the post as a person term
+	 */
+	public function save_post( $unused_post_id, $post )
+	{
+		// check that this isn't an autosave
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
+		{
+			return;
+		}//end if
+		$this->is_save_post = TRUE;
+		$this->post_id = $post->ID;
+		$content = $post->post_content;
+		do_shortcode( $content );
+		$this->is_save_post = FALSE;
+		$this->post_id = NULL;
+	}// end save_post
 }// end class
 
 
