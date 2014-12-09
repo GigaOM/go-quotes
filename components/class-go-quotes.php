@@ -179,9 +179,9 @@ class GO_Quotes
 		);
 
 		//check if we're saving and add person terms
-		if ( isset( $atts[ 'person' ] ) && $this->is_save_post )
+		if ( isset( $atts[ 'person' ] ) && $this->admin->is_save_post )
 		{
-			wp_set_post_terms( $this->post_id, $atts[ 'person' ], $this->config( 'taxonomy' ), TRUE );
+			wp_set_post_terms( $this->admin->post_id, $atts[ 'person' ], $this->config( 'taxonomy' ), TRUE );
 			return;
 		}//end if
 
