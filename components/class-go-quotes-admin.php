@@ -12,7 +12,7 @@ class GO_Quotes_Admin
 
 		add_action( 'current_screen', array( $this, 'current_screen' ) );
 		add_action( 'admin_head', array( $this, 'admin_head' ) );
-		add_action('admin_menu', array( $this, 'admin_menu' ) );
+		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 
 		add_filter( 'go_guestpost_post_types', array( $this, 'go_guestpost_post_types' ) );
 		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
@@ -37,7 +37,8 @@ class GO_Quotes_Admin
 
 	public function admin_head()
 	{
-		if( 'edit-go-quotes-pullquote' != get_current_screen()->id  && 'go-quotes-pullquote' != get_current_screen()->id ) {
+		if ( 'edit-go-quotes-pullquote' != get_current_screen()->id  && 'go-quotes-pullquote' != get_current_screen()->id )
+		{
 			return;
 		}//end if
 
@@ -47,9 +48,8 @@ class GO_Quotes_Admin
 	public function admin_menu()
 	{
 		global $submenu;
-		do_action( 'debug_robot', print_r( $submenu, TRUE ) );
 		// replace my_type with the name of your post type
-		unset($submenu['edit.php?post_type=go-quotes-pullquote'][10]);
+		unset( $submenu['edit.php?post_type=go-quotes-pullquote'][10] );
 	}//end admin_menu
 
 	/**
