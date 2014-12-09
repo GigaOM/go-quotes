@@ -254,7 +254,6 @@ class GO_Quotes
 
 			echo $wrapper_end;
 
-
 			$quote_permalink = get_permalink( $post->ID ) . '#quote-' . $this->quote_id;
 			//permalink
 			$links = '<a href="' . esc_url( $quote_permalink ) . '" class="goicon icon-link-circled"></a>';
@@ -335,12 +334,7 @@ class GO_Quotes
 	 */
 	public function pre_get_posts( $query )
 	{
-		if (
-			! is_admin()
-			&& $query->is_main_query()
-			// @TODO: remove theme_preview when waterfall goes live
-			&& go_theme()->theme_preview()
-		)
+		if ( ! is_admin() && $query->is_main_query() )
 		{
 			$post_types = array_merge(
 				(array) $query->query_vars['post_type'],
@@ -353,7 +347,6 @@ class GO_Quotes
 
 		return $query;
 	}// END pre_get_posts
-
 
 	/**
 	 * Return the link to the original post for pullquote posts
@@ -372,9 +365,7 @@ class GO_Quotes
 
 		return $permalink;
 	}//end post_type_link
-
 }// end class
-
 
 /**
  * GO_Alerts Singleton
