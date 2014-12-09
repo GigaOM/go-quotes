@@ -258,7 +258,7 @@ class GO_Quotes
 			$quote_permalink = get_permalink( $post->ID ) . '#quote-' . $this->quote_id;
 			//permalink
 			$links = '<a href="' . esc_url( $quote_permalink ) . '" class="goicon icon-link-circled"></a>';
-			$links = apply_filters( 'go_quotes_links', $links, $quote_permalink, $post->ID );
+			$links = apply_filters( 'go_quotes_links', $links, $quote_permalink, $post->ID, $content );
 
 			echo '<div class="social">';
 			echo wp_kses_post( $links );
