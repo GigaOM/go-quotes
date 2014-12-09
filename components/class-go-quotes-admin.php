@@ -206,7 +206,7 @@ class GO_Quotes_Admin
 		$this->post_id = $post_id;
 
 		$original_post_content = $content = $_POST['post_content'];
-		do_shortcode( $content );
+		do_shortcode( $post->post_content );
 
 		$this->is_save_post = FALSE;
 		$this->post_id = NULL;
