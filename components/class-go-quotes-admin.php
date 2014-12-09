@@ -35,6 +35,9 @@ class GO_Quotes_Admin
 		add_filter( 'manage_posts_columns', array( $this, 'manage_posts_columns' ) );
 	}//end current_screen
 
+	/**
+	 * hooked to admin_head to hide the add new button via injected css
+	 */
 	public function admin_head()
 	{
 		if ( 'edit-go-quotes-pullquote' != get_current_screen()->id  && 'go-quotes-pullquote' != get_current_screen()->id )
@@ -45,6 +48,9 @@ class GO_Quotes_Admin
 		echo '<style type="text/css">.add-new-h2{display:none;</style>';
 	}//end admin_head
 
+	/**
+	 * hooked to admin_menu to remove the add new option from the submenu
+	 */
 	public function admin_menu()
 	{
 		global $submenu;
@@ -55,7 +61,7 @@ class GO_Quotes_Admin
 	/**
 	 * hooked to the admin_enqueue_scripts
 	 */
-	public function admin_enqueue_scripts( )
+	public function admin_enqueue_scripts()
 	{
 		if ( ! function_exists( 'go_ui' ) || 'edit-go-quotes-pullquote' != get_current_screen()->id )
 		{
