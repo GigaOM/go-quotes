@@ -338,15 +338,21 @@ class GO_Quotes
 		if (
 			! is_admin()
 			&& $query->is_main_query()
-			// @TODO: remove theme_preview when waterfall goes live
-			&& go_theme()->theme_preview()
 		)
 		{
-			$post_types = array_merge(
-				(array) $query->query_vars['post_type'],
-				array( is_singular() && isset( $query->queried_object->post_type ) ? $query->queried_object->post_type : 'post' ),
-				array( $this->post_type_name )
-			);
+			$post_types = (array) $query->query_vars['post_type'];
+
+			// if there aren't any post types in the post_type query var, make sure post is in there
+			if ( empty( $post_types ) )
+			{
+				$post_types[] = 'post';
+			}//end if
+
+			// only include quotes if we're looking for posts, otherwise, we may be in a different archive page
+			if ( in_array( 'post', $post_types ) )
+			{
+				$post_types[] = $this->post_type_name;
+			}//end if
 
 			$query->set( 'post_type', $post_types );
 		}// END if
