@@ -11,6 +11,8 @@ class GO_Quotes_Admin
 		add_action( 'post_submitbox_start', array( $this, 'post_submitbox_start' ) );
 
 		add_action( 'current_screen', array( $this, 'current_screen' ) );
+		add_action( 'admin_head', array( $this, 'admin_head' ) );
+		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 
 		add_filter( 'go_guestpost_post_types', array( $this, 'go_guestpost_post_types' ) );
 		add_filter( 'save_post', array( $this, 'save_post' ), 10, 2 );
@@ -34,11 +36,34 @@ class GO_Quotes_Admin
 	}//end current_screen
 
 	/**
+	 * hooked to admin_head to hide the add new button via injected css
+	 */
+	public function admin_head()
+	{
+		if ( 'edit-go-quotes-pullquote' != get_current_screen()->id  && 'go-quotes-pullquote' != get_current_screen()->id )
+		{
+			return;
+		}//end if
+
+		echo '<style type="text/css">.add-new-h2{display:none;</style>';
+	}//end admin_head
+
+	/**
+	 * hooked to admin_menu to remove the add new option from the submenu
+	 */
+	public function admin_menu()
+	{
+		global $submenu;
+		// replace my_type with the name of your post type
+		unset( $submenu['edit.php?post_type=go-quotes-pullquote'][10] );
+	}//end admin_menu
+
+	/**
 	 * hooked to the admin_enqueue_scripts
 	 */
 	public function admin_enqueue_scripts()
 	{
-		if ( ! function_exists( 'go_ui' ) )
+		if ( ! function_exists( 'go_ui' ) || 'edit-go-quotes-pullquote' != get_current_screen()->id )
 		{
 			return;
 		}//end if
