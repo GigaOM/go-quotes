@@ -337,6 +337,7 @@ class GO_Quotes
 		if (
 			! is_admin()
 			&& $query->is_main_query()
+			&& empty( $query->query_vars['pagename'] )
 		)
 		{
 			$post_types = (array) $query->query_vars['post_type'];
