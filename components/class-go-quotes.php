@@ -21,6 +21,7 @@ class GO_Quotes
 		add_filter( 'quicktags_settings', array( $this, 'quicktag_settings' ), 10, 1 );
 		add_filter( 'pre_get_posts', array( $this, 'pre_get_posts' ) );
 		add_filter( 'post_type_link', array( $this, 'post_type_link' ), 11, 2 );
+		add_filter( 'get_the_excerpt', array( $this, 'get_the_excerpt' ) );
 
 		if ( is_admin() )
 		{
@@ -377,6 +378,22 @@ class GO_Quotes
 
 		return $permalink;
 	}//end post_type_link
+
+	/**
+	 * Filter the get_the_excerpt hook and remove quotes from the begining/end of the quote
+	 * This normalizes the string so we can add quotes later on without doubling them up
+	 */
+	public function get_the_excerpt( $post_excerpt )
+	{
+		global $post;
+
+		if ( $this->post_type_name != $post->post_type )
+		{
+			return $post_excerpt;
+		} // END if
+
+		return preg_replace( '#^"|"$#', '', $post_excerpt );
+	} // END get_the_excerpt
 }// end class
 
 /**
