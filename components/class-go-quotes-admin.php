@@ -72,9 +72,11 @@ class GO_Quotes_Admin
 
 		$script_config = apply_filters( 'go_config', array( 'version' => 1 ), 'go-script-version' );
 
+		$js_min = ( defined( 'GO_DEV' ) && GO_DEV ) ? 'lib' : 'min';
+
 		wp_register_script(
 			'go-quotes-pullquote',
-			plugins_url( 'js/lib/go-quotes-pullquote.js', __FILE__ ),
+			plugins_url( 'js/' . $js_min . '/go-quotes-pullquote.js', __FILE__ ),
 			array(
 				'jquery',
 				'blockui',
