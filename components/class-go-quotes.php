@@ -339,6 +339,7 @@ class GO_Quotes
 			! is_admin()
 			&& $query->is_main_query()
 			&& empty( $query->query_vars['pagename'] )
+			&& empty( $query->query_vars['attachment'] )
 		)
 		{
 			$post_types = (array) $query->query_vars['post_type'];
