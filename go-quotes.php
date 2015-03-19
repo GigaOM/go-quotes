@@ -6,6 +6,8 @@
  * Author URI: http://gigaomnetwork.com/
  *
  * @author Stephen Page <stephen.page@gigaom.com>
+ * License: GPLv2
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
 
 
