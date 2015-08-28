@@ -342,7 +342,7 @@ class GO_Quotes
 			&& empty( $query->query_vars['attachment'] )
 		)
 		{
-			$post_types = (array) $query->query_vars['post_type'];
+			$post_types = isset( $query->query_vars['post_type'] ) ? (array) $query->query_vars['post_type'] : '';
 
 			// if there aren't any post types in the post_type query var, make sure post is in there
 			if ( empty( $post_types ) )
